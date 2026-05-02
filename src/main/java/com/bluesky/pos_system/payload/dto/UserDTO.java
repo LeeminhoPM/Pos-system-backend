@@ -24,6 +24,10 @@ public class UserDTO {
 
     String password;
 
+    UUID branchId;
+
+    UUID storeId;
+
     LocalDate createdAt;
 
     LocalDate updatedAt;

@@ -36,6 +36,9 @@ public class User {
     @ManyToOne
     Store store;
 
+    @ManyToOne
+    Branch branch;
+
     @Column(nullable = false)
     UserRole roles;
 
