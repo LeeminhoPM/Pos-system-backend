@@ -1,12 +1,10 @@
 package com.bluesky.pos_system.payload.dto;
 
 import com.bluesky.pos_system.domains.PaymentType;
-import com.bluesky.pos_system.models.Customer;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -14,24 +12,30 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class OrderDTO {
+public class RefundDTO {
     UUID id;
 
-    Double totalAmount;
+    UUID orderId;
 
-    LocalDateTime createdAt;
+    OrderDTO order;
 
-    UUID branchId;
+    String reason;
 
-    UUID customerId;
+    Double amount;
 
-    BranchDTO branch;
+    UUID shiftReportId;
+
+//    ShiftReport shiftReport;
 
     UserDTO cashier;
 
-    Customer customer;
+    String cashierName;
 
-    List<OrderItemDTO> items;
+    UUID branchId;
+
+    BranchDTO branch;
 
     PaymentType paymentType;
+
+    LocalDateTime createdAt;
 }
