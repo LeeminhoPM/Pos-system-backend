@@ -39,6 +39,14 @@ public class ProductMapper {
                 .build();
     }
 
+    public static ProductDTO toDTO(Product product, Integer currentStock) {
+        ProductDTO dto = toDTO(product);
+        if (dto != null && currentStock != null) {
+            dto.setCurrentStock(currentStock);
+        }
+        return dto;
+    }
+
     public static Product toEntity(ProductDTO productDTO, Store store, Category category, Supplier supplier) {
         if (productDTO == null) return null;
 

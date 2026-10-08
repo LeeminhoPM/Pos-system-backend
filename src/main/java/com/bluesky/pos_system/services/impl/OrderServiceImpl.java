@@ -31,6 +31,7 @@ public class OrderServiceImpl implements OrderService {
     ProductRepository productRepository;
     CustomerRepository customerRepository;
     InventoryRepository inventoryRepository;
+    InventoryTransactionRepository inventoryTransactionRepository;
     BranchRepository branchRepository;
     UserService userService;
 
@@ -75,6 +76,7 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         final Branch finalBranch = branch;
+        final User finalCashier = cashier;
         List<OrderItem> orderItems = orderDTO.getItems().stream().map(
                 orderItemDTO -> {
                     Product product = productRepository.findById(orderItemDTO.getProductId()).orElseThrow(
@@ -83,13 +85,33 @@ public class OrderServiceImpl implements OrderService {
                     int qty = orderItemDTO.getQuantity() != null ? orderItemDTO.getQuantity() : 1;
                     double itemPrice = (product.getSellingPrice() != null ? product.getSellingPrice() : 0.0) * qty;
 
-                    // Deduct inventory stock for the branch
+                    // Validate & deduct inventory stock with audit transaction
                     Inventory inventory = inventoryRepository.findByProductIdAndBranchId(product.getId(), finalBranch.getId());
-                    if (inventory != null) {
-                        int remaining = Math.max(0, inventory.getQuantity() - qty);
-                        inventory.setQuantity(remaining);
-                        inventoryRepository.save(inventory);
+                    int availableStock = (inventory != null && inventory.getQuantity() != null) ? inventory.getQuantity() : 0;
+                    if (inventory == null || availableStock < qty) {
+                        throw new com.bluesky.pos_system.exceptions.InsufficientStockException(
+                                "Sản phẩm '" + product.getName() + "' (SKU: " + product.getSku() +
+                                ") không đủ tồn kho tại chi nhánh " + finalBranch.getName() +
+                                ". Tồn kho hiện có: " + availableStock + ", yêu cầu mua: " + qty
+                        );
                     }
+
+                    int remaining = availableStock - qty;
+                    inventory.setQuantity(remaining);
+                    inventoryRepository.save(inventory);
+
+                    // Create stock audit trail entry
+                    InventoryTransaction tx = InventoryTransaction.builder()
+                            .branch(finalBranch)
+                            .product(product)
+                            .type(com.bluesky.pos_system.domains.InventoryTransactionType.SALE)
+                            .quantityChange(-qty)
+                            .balanceAfter(remaining)
+                            .referenceNumber(orderNumber)
+                            .notes("Bán lẻ qua đơn #" + orderNumber)
+                            .createdBy(finalCashier)
+                            .build();
+                    inventoryTransactionRepository.save(tx);
 
                     return OrderItem.builder()
                             .product(product)

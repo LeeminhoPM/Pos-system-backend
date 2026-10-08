@@ -23,6 +23,18 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(InsufficientStockException.class)
+    public ResponseEntity<ApiResponse> handleInsufficientStockException(InsufficientStockException ex) {
+        log.warn("InsufficientStockException: {}", ex.getMessage());
+        ApiResponse response = ApiResponse.builder()
+                .message(ex.getMessage())
+                .success(false)
+                .status(HttpStatus.BAD_REQUEST.value())
+                .timestamp(LocalDateTime.now())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(UserException.class)
     public ResponseEntity<ApiResponse> handleUserException(UserException ex) {
         log.warn("UserException encountered: {}", ex.getMessage());

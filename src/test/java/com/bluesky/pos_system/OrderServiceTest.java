@@ -40,6 +40,9 @@ class OrderServiceTest {
     private InventoryRepository inventoryRepository;
 
     @Mock
+    private InventoryTransactionRepository inventoryTransactionRepository;
+
+    @Mock
     private BranchRepository branchRepository;
 
     @Mock
@@ -123,5 +126,33 @@ class OrderServiceTest {
         assertEquals(19, customer.getLoyaltyPoints());
         assertEquals(598000.0, customer.getTotalSpent());
         verify(customerRepository, times(1)).save(customer);
+    }
+
+    @Test
+    @DisplayName("Create Order - Throws InsufficientStockException when requested quantity exceeds available stock")
+    void testCreateOrder_ThrowsInsufficientStockException() {
+        OrderItemDTO itemDTO = OrderItemDTO.builder()
+                .productId(product.getId())
+                .quantity(50) // More than available 20
+                .build();
+
+        OrderDTO orderRequest = OrderDTO.builder()
+                .branchId(branch.getId())
+                .customerId(customer.getId())
+                .items(List.of(itemDTO))
+                .build();
+
+        when(branchRepository.findById(branch.getId())).thenReturn(Optional.of(branch));
+        when(customerRepository.findById(customer.getId())).thenReturn(Optional.of(customer));
+        when(productRepository.findById(product.getId())).thenReturn(Optional.of(product));
+        when(inventoryRepository.findByProductIdAndBranchId(product.getId(), branch.getId())).thenReturn(inventory);
+
+        assertThrows(com.bluesky.pos_system.exceptions.InsufficientStockException.class, () -> {
+            orderService.createOrder(orderRequest);
+        });
+
+        // Verify stock was not deducted
+        assertEquals(20, inventory.getQuantity());
+        verify(orderRepository, never()).save(any());
     }
 }

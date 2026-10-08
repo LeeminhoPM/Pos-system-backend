@@ -38,6 +38,7 @@ public class ProductServiceImpl implements ProductService {
     StoreRepository storeRepository;
     CategoryRepository categoryRepository;
     SupplierRepository supplierRepository;
+    com.bluesky.pos_system.repositories.InventoryRepository inventoryRepository;
 
     @Override
     @Transactional
@@ -128,7 +129,8 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findByIdAndIsDeletedFalse(id).orElseThrow(
                 () -> new EntityNotFoundException("Không tìm thấy sản phẩm với id: " + id)
         );
-        return ProductMapper.toDTO(product);
+        Integer stock = inventoryRepository.getTotalStockByProductId(product.getId());
+        return ProductMapper.toDTO(product, stock != null ? stock : 0);
     }
 
     @Override
@@ -154,7 +156,10 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<ProductDTO> getAllProductsByStoreId(UUID storeId) {
         List<Product> products = productRepository.findByStoreIdAndIsDeletedFalse(storeId);
-        return products.stream().map(ProductMapper::toDTO).toList();
+        return products.stream().map(p -> {
+            Integer stock = inventoryRepository.getTotalStockByProductId(p.getId());
+            return ProductMapper.toDTO(p, stock != null ? stock : 0);
+        }).toList();
     }
 
     @Override
@@ -165,7 +170,10 @@ public class ProductServiceImpl implements ProductService {
 
         Page<Product> pageResult = productRepository.filterProducts(storeId, kw, categoryId, status, pageRequest);
         List<ProductDTO> dtoList = pageResult.getContent().stream()
-                .map(ProductMapper::toDTO)
+                .map(p -> {
+                    Integer stock = inventoryRepository.getTotalStockByProductId(p.getId());
+                    return ProductMapper.toDTO(p, stock != null ? stock : 0);
+                })
                 .toList();
 
         return PageResponse.<ProductDTO>builder()
@@ -181,6 +189,9 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<ProductDTO> searchByKeyword(UUID storeId, String keyword) {
         List<Product> products = productRepository.searchByKeyword(storeId, keyword);
-        return products.stream().map(ProductMapper::toDTO).toList();
+        return products.stream().map(p -> {
+            Integer stock = inventoryRepository.getTotalStockByProductId(p.getId());
+            return ProductMapper.toDTO(p, stock != null ? stock : 0);
+        }).toList();
     }
 }

@@ -2,6 +2,7 @@ package com.bluesky.pos_system.services.impl;
 
 import com.bluesky.pos_system.domains.InventoryTransactionType;
 import com.bluesky.pos_system.domains.StockReceiptType;
+import com.bluesky.pos_system.mappers.InventoryTransactionMapper;
 import com.bluesky.pos_system.mappers.StockReceiptMapper;
 import com.bluesky.pos_system.models.*;
 import com.bluesky.pos_system.payload.dto.InventoryTransactionDTO;
@@ -143,42 +144,14 @@ public class StockReceiptServiceImpl implements StockReceiptService {
     @Override
     public List<InventoryTransactionDTO> getInventoryHistory(UUID branchId) {
         return inventoryTransactionRepository.findByBranchIdOrderByCreatedAtDesc(branchId).stream()
-                .map(tx -> InventoryTransactionDTO.builder()
-                        .id(tx.getId())
-                        .branchId(tx.getBranch().getId())
-                        .branchName(tx.getBranch().getName())
-                        .productId(tx.getProduct().getId())
-                        .productName(tx.getProduct().getName())
-                        .sku(tx.getProduct().getSku())
-                        .type(tx.getType())
-                        .quantityChange(tx.getQuantityChange())
-                        .balanceAfter(tx.getBalanceAfter())
-                        .referenceNumber(tx.getReferenceNumber())
-                        .notes(tx.getNotes())
-                        .createdByName(tx.getCreatedBy() != null ? tx.getCreatedBy().getName() : null)
-                        .createdAt(tx.getCreatedAt())
-                        .build())
+                .map(InventoryTransactionMapper::toDTO)
                 .toList();
     }
 
     @Override
     public List<InventoryTransactionDTO> getProductInventoryHistory(UUID productId) {
         return inventoryTransactionRepository.findByProductIdOrderByCreatedAtDesc(productId).stream()
-                .map(tx -> InventoryTransactionDTO.builder()
-                        .id(tx.getId())
-                        .branchId(tx.getBranch().getId())
-                        .branchName(tx.getBranch().getName())
-                        .productId(tx.getProduct().getId())
-                        .productName(tx.getProduct().getName())
-                        .sku(tx.getProduct().getSku())
-                        .type(tx.getType())
-                        .quantityChange(tx.getQuantityChange())
-                        .balanceAfter(tx.getBalanceAfter())
-                        .referenceNumber(tx.getReferenceNumber())
-                        .notes(tx.getNotes())
-                        .createdByName(tx.getCreatedBy() != null ? tx.getCreatedBy().getName() : null)
-                        .createdAt(tx.getCreatedAt())
-                        .build())
+                .map(InventoryTransactionMapper::toDTO)
                 .toList();
     }
 }

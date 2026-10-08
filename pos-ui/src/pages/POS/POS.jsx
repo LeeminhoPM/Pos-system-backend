@@ -120,20 +120,61 @@ export default function POS() {
         return matchesCategory && matchesQuery;
     });
 
-    // Handle Quick Barcode / Product Select
+    // Validate stock before adding to cart or increasing quantity
     const handleProductClick = (product) => {
+        const availableStock = inventoryMap[product.id] ?? 0;
+        const currentCartItem = items.find((i) => i.product.id === product.id);
+        const currentInCart = currentCartItem ? currentCartItem.quantity : 0;
+
+        if (availableStock <= 0) {
+            alert(`Sản phẩm "${product.name}" hiện đã HẾT HÀNG trong kho của chi nhánh! Không thể thêm vào giỏ hàng.`);
+            return;
+        }
+
+        if (currentInCart + 1 > availableStock) {
+            alert(`Không đủ tồn kho! Sản phẩm "${product.name}" hiện chỉ còn ${availableStock} cái trong kho (trong giỏ hàng đã có ${currentInCart} cái).`);
+            return;
+        }
+
         addItem(product, 1);
     };
 
-    // Handle Checkout Open
+    const handleIncreaseQuantity = (item) => {
+        const availableStock = inventoryMap[item.product.id] ?? 0;
+        if (item.quantity + 1 > availableStock) {
+            alert(`Không thể tăng thêm! Sản phẩm "${item.product.name}" chỉ còn tối đa ${availableStock} cái trong kho.`);
+            return;
+        }
+        updateQuantity(item.product.id, item.quantity + 1);
+    };
+
+    // Pre-checkout stock validation across all cart items
+    const validateStockBeforeCheckout = () => {
+        for (const item of items) {
+            const availableStock = inventoryMap[item.product.id] ?? 0;
+            if (availableStock <= 0) {
+                alert(`Không thể thanh toán! Sản phẩm "${item.product.name}" hiện đã hết hàng trong kho. Vui lòng xóa khỏi giỏ.`);
+                return false;
+            }
+            if (item.quantity > availableStock) {
+                alert(`Không thể thanh toán! Sản phẩm "${item.product.name}" có số lượng ${item.quantity} cái nhưng tồn kho chỉ còn ${availableStock} cái. Vui lòng giảm số lượng.`);
+                return false;
+            }
+        }
+        return true;
+    };
+
+    // Handle Checkout Open with stock validation
     const handleOpenCheckout = () => {
         if (items.length === 0) return;
+        if (!validateStockBeforeCheckout()) return;
         setCashTendered(getTotalAmount().toString());
         setIsCheckoutOpen(true);
     };
 
-    // Submit Order
+    // Submit Order with backend & frontend stock validation
     const handleCompleteOrder = async () => {
+        if (!validateStockBeforeCheckout()) return;
         setIsSubmitting(true);
         try {
             const orderPayload = {
@@ -155,7 +196,7 @@ export default function POS() {
             setIsCheckoutOpen(false);
             setIsReceiptOpen(true);
 
-            // Refresh branch inventory
+            // Refresh branch inventory after confirmed order
             if (branch?.id) {
                 const invs = await inventoryApi.getByBranch(branch.id).catch(() => []);
                 const invMapping = {};
@@ -165,7 +206,8 @@ export default function POS() {
                 setInventoryMap(invMapping);
             }
         } catch (err) {
-            alert(err.message || "Không thể tạo đơn hàng");
+            const msg = err.response?.data?.message || err.message || "Không thể tạo đơn hàng";
+            alert(msg);
         } finally {
             setIsSubmitting(false);
         }
@@ -254,7 +296,11 @@ export default function POS() {
                                     <div
                                         key={p.id}
                                         onClick={() => handleProductClick(p)}
-                                        className="group relative rounded-xl border border-border/60 bg-card p-3 hover:border-blue-500/50 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between"
+                                        className={`group relative rounded-xl border p-3 transition-all cursor-pointer flex flex-col justify-between ${
+                                            isOutOfStock
+                                                ? "opacity-60 bg-muted/15 border-destructive/20 hover:border-destructive/40"
+                                                : "bg-card border-border/60 hover:border-blue-500/50 hover:shadow-md"
+                                        }`}
                                     >
                                         <div>
                                             {/* Image or fallback */}
@@ -263,7 +309,9 @@ export default function POS() {
                                                     <img
                                                         src={p.image}
                                                         alt={p.name}
-                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                        className={`w-full h-full object-cover transition-transform duration-300 ${
+                                                            isOutOfStock ? "grayscale" : "group-hover:scale-105"
+                                                        }`}
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500/10 to-indigo-500/10 text-blue-600">
@@ -292,8 +340,12 @@ export default function POS() {
                                             <span className="font-bold text-sm text-blue-600 dark:text-blue-400">
                                                 {(p.sellingPrice || 0).toLocaleString("vi-VN")} ₫
                                             </span>
-                                            <div className="size-7 rounded-lg bg-secondary group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-colors">
-                                                <Plus className="size-3.5" />
+                                            <div className={`size-7 rounded-lg flex items-center justify-center transition-colors ${
+                                                isOutOfStock
+                                                    ? "bg-destructive/10 text-destructive"
+                                                    : "bg-secondary group-hover:bg-blue-600 group-hover:text-white"
+                                            }`}>
+                                                {isOutOfStock ? <X className="size-3.5" /> : <Plus className="size-3.5" />}
                                             </div>
                                         </div>
                                     </div>
@@ -352,48 +404,64 @@ export default function POS() {
                             <span>Giỏ hàng trống. Chọn sản phẩm bên trái!</span>
                         </div>
                     ) : (
-                        items.map((item) => (
-                            <div
-                                key={item.product.id}
-                                className="p-2.5 rounded-lg bg-muted/30 border border-border/40 flex items-center justify-between gap-3 text-xs"
-                            >
-                                <div className="min-w-0 flex-1">
-                                    <p className="font-semibold text-foreground truncate">{item.product.name}</p>
-                                    <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
-                                        {(item.unitPrice || 0).toLocaleString("vi-VN")} ₫
-                                    </p>
-                                </div>
+                        items.map((item) => {
+                            const itemStock = inventoryMap[item.product.id] ?? 0;
+                            const isExceeded = item.quantity > itemStock;
 
-                                {/* Quantity Control */}
-                                <div className="flex items-center gap-1 bg-background rounded-md border border-border p-0.5">
-                                    <button
-                                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                                        className="size-5 rounded flex items-center justify-center hover:bg-muted text-muted-foreground cursor-pointer"
-                                    >
-                                        <Minus className="size-3" />
-                                    </button>
-                                    <span className="w-6 text-center font-bold text-xs">{item.quantity}</span>
-                                    <button
-                                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                                        className="size-5 rounded flex items-center justify-center hover:bg-muted text-muted-foreground cursor-pointer"
-                                    >
-                                        <Plus className="size-3" />
-                                    </button>
-                                </div>
-
-                                <div className="text-right shrink-0">
-                                    <div className="font-bold text-foreground">
-                                        {(item.subtotal || 0).toLocaleString("vi-VN")} ₫
+                            return (
+                                <div
+                                    key={item.product.id}
+                                    className={`p-2.5 rounded-lg border flex items-center justify-between gap-3 text-xs transition-colors ${
+                                        isExceeded
+                                            ? "bg-destructive/10 border-destructive/50"
+                                            : "bg-muted/30 border-border/40"
+                                    }`}
+                                >
+                                    <div className="min-w-0 flex-1">
+                                        <p className="font-semibold text-foreground truncate">{item.product.name}</p>
+                                        <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                                            {(item.unitPrice || 0).toLocaleString("vi-VN")} ₫
+                                        </p>
+                                        {isExceeded && (
+                                            <p className="text-[10px] text-destructive font-bold mt-0.5">
+                                                ⚠️ Vượt quá tồn kho (Kho còn {itemStock})
+                                            </p>
+                                        )}
                                     </div>
-                                    <button
-                                        onClick={() => removeItem(item.product.id)}
-                                        className="text-muted-foreground hover:text-destructive text-[10px] mt-0.5 cursor-pointer"
-                                    >
-                                        Xóa
-                                    </button>
+
+                                    {/* Quantity Control */}
+                                    <div className="flex items-center gap-1 bg-background rounded-md border border-border p-0.5">
+                                        <button
+                                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                            className="size-5 rounded flex items-center justify-center hover:bg-muted text-muted-foreground cursor-pointer"
+                                        >
+                                            <Minus className="size-3" />
+                                        </button>
+                                        <span className={`w-6 text-center font-bold text-xs ${isExceeded ? "text-destructive" : ""}`}>
+                                            {item.quantity}
+                                        </span>
+                                        <button
+                                            onClick={() => handleIncreaseQuantity(item)}
+                                            className="size-5 rounded flex items-center justify-center hover:bg-muted text-muted-foreground cursor-pointer"
+                                        >
+                                            <Plus className="size-3" />
+                                        </button>
+                                    </div>
+
+                                    <div className="text-right shrink-0">
+                                        <div className="font-bold text-foreground">
+                                            {(item.subtotal || 0).toLocaleString("vi-VN")} ₫
+                                        </div>
+                                        <button
+                                            onClick={() => removeItem(item.product.id)}
+                                            className="text-muted-foreground hover:text-destructive text-[10px] mt-0.5 cursor-pointer"
+                                        >
+                                            Xóa
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
 

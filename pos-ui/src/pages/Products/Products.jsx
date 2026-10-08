@@ -11,7 +11,7 @@ import {
     X,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
-import { productApi, categoryApi } from "@/services/api";
+import { productApi, categoryApi, inventoryApi } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -19,9 +19,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
 
 export default function Products() {
-    const { store, user } = useAuthStore();
+    const { store, user, branch } = useAuthStore();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [stockMap, setStockMap] = useState({});
+    const [stockFilter, setStockFilter] = useState("ALL");
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("");
     const [isLoading, setIsLoading] = useState(true);
@@ -52,12 +54,18 @@ export default function Products() {
         if (!store?.id) return;
         setIsLoading(true);
         try {
-            const [prods, cats] = await Promise.all([
+            const [prods, cats, invs] = await Promise.all([
                 productApi.getByStore(store.id).catch(() => []),
                 categoryApi.getByStore(store.id).catch(() => []),
+                branch?.id ? inventoryApi.getByBranch(branch.id).catch(() => []) : [],
             ]);
             setProducts(prods || []);
             setCategories(cats || []);
+            const map = {};
+            (invs || []).forEach((i) => {
+                map[i.productId || i.product?.id] = i.quantity;
+            });
+            setStockMap(map);
         } catch (err) {
             console.error("Lỗi khi tải danh sách sản phẩm:", err);
         } finally {
@@ -67,7 +75,7 @@ export default function Products() {
 
     useEffect(() => {
         loadData();
-    }, [store?.id]);
+    }, [store?.id, branch?.id]);
 
     const handleOpenAddModal = () => {
         setEditingProduct(null);
@@ -176,6 +184,13 @@ export default function Products() {
             p.name?.toLowerCase().includes(q) ||
             p.sku?.toLowerCase().includes(q) ||
             p.barcode?.toLowerCase().includes(q);
+
+        const stock = stockMap[p.id] ?? p.currentStock ?? 0;
+        const minStock = p.minStockLevel || 5;
+        if (stockFilter === "IN_STOCK" && stock <= 0) return false;
+        if (stockFilter === "LOW_STOCK" && (stock <= 0 || stock > minStock)) return false;
+        if (stockFilter === "OUT_OF_STOCK" && stock > 0) return false;
+
         return matchesCategory && matchesQuery;
     });
 
@@ -188,7 +203,7 @@ export default function Products() {
                         Quản Lý Sản Phẩm
                     </h1>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                        Danh sách các mặt hàng, giá cả và thiết lập danh mục
+                        Danh sách các mặt hàng, giá cả, tồn kho thực tế và thiết lập danh mục
                     </p>
                 </div>
                 <div className="flex items-center gap-2.5">
@@ -214,8 +229,8 @@ export default function Products() {
 
             {/* Filter & Search Bar */}
             <Card className="border-border/60 bg-card/60">
-                <CardContent className="p-4 flex flex-col sm:flex-row gap-3">
-                    <div className="relative flex-1">
+                <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="relative flex-1 w-full">
                         <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
                         <Input
                             placeholder="Tìm kiếm theo tên sản phẩm, SKU hoặc mã vạch..."
@@ -224,18 +239,40 @@ export default function Products() {
                             className="pl-9 h-9 text-sm"
                         />
                     </div>
-                    <select
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="text-xs rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary min-w-[160px]"
-                    >
-                        <option value="">Tất cả danh mục</option>
-                        {categories.map((c) => (
-                            <option key={c.id} value={c.id}>
-                                {c.name}
-                            </option>
-                        ))}
-                    </select>
+                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="text-xs rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary min-w-[150px]"
+                        >
+                            <option value="">Tất cả danh mục</option>
+                            {categories.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                    {c.name}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="flex items-center rounded-lg bg-muted/60 p-0.5 border border-border/40 text-xs font-semibold">
+                            {[
+                                { key: "ALL", label: "Tất cả" },
+                                { key: "IN_STOCK", label: "Còn hàng" },
+                                { key: "LOW_STOCK", label: "Sắp hết" },
+                                { key: "OUT_OF_STOCK", label: "Hết hàng" },
+                            ].map((tab) => (
+                                <button
+                                    key={tab.key}
+                                    onClick={() => setStockFilter(tab.key)}
+                                    className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                                        stockFilter === tab.key
+                                            ? "bg-background text-foreground shadow-xs font-bold"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -259,6 +296,7 @@ export default function Products() {
                                         <th className="py-3 px-4">Danh mục</th>
                                         <th className="py-3 px-4 text-right">Giá bán</th>
                                         <th className="py-3 px-4 text-right">Giá vốn</th>
+                                        <th className="py-3 px-4 text-center">Tồn kho hiện có</th>
                                         <th className="py-3 px-4 text-center">Tồn tối thiểu</th>
                                         <th className="py-3 px-4 text-center">Thao tác</th>
                                     </tr>
@@ -307,6 +345,31 @@ export default function Products() {
                                             </td>
                                             <td className="py-3 px-4 text-right text-muted-foreground">
                                                 {(product.costPrice || 0).toLocaleString("vi-VN")} ₫
+                                            </td>
+                                            <td className="py-3 px-4 text-center">
+                                                {(() => {
+                                                    const stock = stockMap[product.id] ?? product.currentStock ?? 0;
+                                                    const minStock = product.minStockLevel || 5;
+                                                    if (stock <= 0) {
+                                                        return (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-destructive/15 text-destructive border border-destructive/20">
+                                                                Hết hàng (0)
+                                                            </span>
+                                                        );
+                                                    }
+                                                    if (stock <= minStock) {
+                                                        return (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                                                Sắp hết ({stock})
+                                                            </span>
+                                                        );
+                                                    }
+                                                    return (
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                                            Còn {stock}
+                                                        </span>
+                                                    );
+                                                })()}
                                             </td>
                                             <td className="py-3 px-4 text-center font-medium">
                                                 {product.minStockLevel || 5}

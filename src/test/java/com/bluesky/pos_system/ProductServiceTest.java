@@ -41,6 +41,9 @@ class ProductServiceTest {
     @Mock
     private SupplierRepository supplierRepository;
 
+    @Mock
+    private com.bluesky.pos_system.repositories.InventoryRepository inventoryRepository;
+
     @InjectMocks
     private ProductServiceImpl productService;
 

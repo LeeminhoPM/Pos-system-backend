@@ -53,8 +53,13 @@ export const productApi = {
 export const inventoryApi = {
     getByBranch: (branchId) => api.get(`/api/inventories/branch/${branchId}`),
     getLowStock: (branchId) => api.get(`/api/inventories/branch/${branchId}/low-stock`),
+    getLowStockSummary: (branchId) => api.get(`/api/inventories/branch/${branchId}/low-stock/summary`),
     adjustStock: (branchId, productId, deltaQuantity) =>
-        api.post(`/api/inventories/adjust?branchId=${branchId}&productId=${productId}&deltaQuantity=${deltaQuantity}`),
+        api.post(`/api/inventories/adjust-quick?branchId=${branchId}&productId=${productId}&deltaQuantity=${deltaQuantity}`),
+    adjustWithAudit: (data) => api.post("/api/inventories/adjust", data),
+    getTransactions: (branchId, page = 0, size = 20) =>
+        api.get(`/api/inventories/transactions/branch/${branchId}?page=${page}&size=${size}`),
+    getProductTransactions: (productId) => api.get(`/api/inventories/transactions/product/${productId}`),
     create: (data) => api.post("/api/inventories", data),
     update: (id, data) => api.put(`/api/inventories/${id}`, data),
     delete: (id) => api.delete(`/api/inventories/${id}`),
