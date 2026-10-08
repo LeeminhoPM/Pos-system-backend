@@ -6,6 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 public class UserMapper {
     public static UserDTO toDTO(User savedUser) {
+        if (savedUser == null) return null;
         return UserDTO.builder()
                 .id(savedUser.getId())
                 .email(savedUser.getEmail())

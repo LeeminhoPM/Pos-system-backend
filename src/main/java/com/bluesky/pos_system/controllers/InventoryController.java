@@ -32,21 +32,37 @@ public class InventoryController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @PostMapping("/adjust")
+    public ResponseEntity<InventoryDTO> adjustStock(
+            @RequestParam UUID branchId,
+            @RequestParam UUID productId,
+            @RequestParam Integer deltaQuantity
+    ) {
+        InventoryDTO response = inventoryService.adjustStock(branchId, productId, deltaQuantity);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse> deleteInventory(@PathVariable UUID id) {
         inventoryService.deleteInventory(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(new ApiResponse("Xóa thành công"));
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse("Xóa thành công"));
     }
 
     @GetMapping("/branch/{branchId}")
     public ResponseEntity<List<InventoryDTO>> getAllInventoryByBranchId(@PathVariable UUID branchId) {
-        List<InventoryDTO> response =  inventoryService.getAllInventoryByBranchId(branchId);
+        List<InventoryDTO> response = inventoryService.getAllInventoryByBranchId(branchId);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/branch/{branchId}/low-stock")
+    public ResponseEntity<List<InventoryDTO>> getLowStockByBranchId(@PathVariable UUID branchId) {
+        List<InventoryDTO> response = inventoryService.getLowStockByBranchId(branchId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @GetMapping("/product/{productId}/branch/{branchId}")
     public ResponseEntity<InventoryDTO> getInventoryByProductIdAndBranchId(@PathVariable UUID productId, @PathVariable UUID branchId) {
-        InventoryDTO response =  inventoryService.getInventoryByProductIdAndBranchId(productId, branchId);
+        InventoryDTO response = inventoryService.getInventoryByProductIdAndBranchId(productId, branchId);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }

@@ -33,6 +33,12 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @PutMapping("/{id}/status")
+    public ResponseEntity<OrderDTO> updateOrderStatus(@PathVariable UUID id, @RequestParam OrderStatus status) {
+        OrderDTO response = orderService.updateOrderStatus(id, status);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
     @GetMapping("/branch/{branchId}")
     public ResponseEntity<List<OrderDTO>> getOrdersByBranch(
             @PathVariable UUID branchId,

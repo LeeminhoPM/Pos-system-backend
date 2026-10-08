@@ -14,6 +14,8 @@ public interface OrderService {
 
     OrderDTO getOrderById(UUID orderId);
 
+    OrderDTO updateOrderStatus(UUID id, OrderStatus status);
+
     List<OrderDTO> getOrderByBranch(UUID branchId, UUID customerId, UUID cashierId, PaymentType paymentType, OrderStatus orderStatus);
 
     List<OrderDTO> getOrderByCashier(UUID cashierId);

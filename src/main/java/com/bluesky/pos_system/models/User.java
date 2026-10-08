@@ -53,4 +53,8 @@ public class User {
     LocalDate updatedAt;
 
     LocalDateTime lastLogin;
+
+    public String getName() {
+        return fullName != null ? fullName : email;
+    }
 }

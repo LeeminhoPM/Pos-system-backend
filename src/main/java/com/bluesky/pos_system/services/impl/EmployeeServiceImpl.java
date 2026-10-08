@@ -10,6 +10,7 @@ import com.bluesky.pos_system.repositories.BranchRepository;
 import com.bluesky.pos_system.repositories.StoreRepository;
 import com.bluesky.pos_system.repositories.UserRepository;
 import com.bluesky.pos_system.services.EmployeeService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -31,17 +32,14 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public UserDTO createStoreEmployee(UserDTO employeeDTO, UUID storeId) {
         Store store = storeRepository.findById(storeId).orElseThrow(
-                () -> new RuntimeException("Không tìm thấy store")
+                () -> new EntityNotFoundException("Không tìm thấy cửa hàng")
         );
 
         Branch branch = null;
-        if (employeeDTO.getRoles() == UserRole.ROLE_BRANCH_MANAGER) {
-            if (employeeDTO.getBranchId() == null) {
-                throw new RuntimeException("Branch id là cần thiết để tạo quản lý branch");
+        if (employeeDTO.getRoles() == UserRole.ROLE_BRANCH_MANAGER || employeeDTO.getBranchId() != null) {
+            if (employeeDTO.getBranchId() != null) {
+                branch = branchRepository.findById(employeeDTO.getBranchId()).orElse(null);
             }
-            branch = branchRepository.findById(employeeDTO.getBranchId()).orElseThrow(
-                    () -> new RuntimeException("Không tìm thấy branch")
-            );
         }
 
         User user = UserMapper.toEntity(employeeDTO);
@@ -61,33 +59,46 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public UserDTO createBranchEmployee(UserDTO employeeDTO, UUID branchId) {
         Branch branch = branchRepository.findById(branchId).orElseThrow(
-                () -> new RuntimeException("Không tìm thấy branch")
+                () -> new EntityNotFoundException("Không tìm thấy chi nhánh")
         );
-        if (employeeDTO.getRoles() == UserRole.ROLE_BRANCH_CASHIER || employeeDTO.getRoles() == UserRole.ROLE_BRANCH_MANAGER) {
-            User user = UserMapper.toEntity(employeeDTO);
-            user.setBranch(branch);
-            user.setPassword(passwordEncoder.encode(employeeDTO.getPassword()));
-            return UserMapper.toDTO(userRepository.save(user));
-        }
-        throw new RuntimeException("Không có quyền branch");
+        User user = UserMapper.toEntity(employeeDTO);
+        user.setBranch(branch);
+        user.setStore(branch.getStore());
+        user.setPassword(passwordEncoder.encode(employeeDTO.getPassword()));
+        return UserMapper.toDTO(userRepository.save(user));
     }
 
     @Override
     public UserDTO updateEmployee(UUID employeeId, UserDTO employeeDTO) {
         User employee = userRepository.findById(employeeId).orElseThrow(
-                () -> new RuntimeException("Không tìm thấy người dùng")
+                () -> new EntityNotFoundException("Không tìm thấy nhân viên")
         );
 
-        Branch branch = branchRepository.findById(employeeDTO.getBranchId()).orElseThrow(
-                () -> new RuntimeException("Không tìm thấy branch")
-        );
+        if (employeeDTO.getBranchId() != null) {
+            Branch branch = branchRepository.findById(employeeDTO.getBranchId()).orElse(null);
+            if (branch != null) {
+                employee.setBranch(branch);
+                if (employee.getStore() == null) {
+                    employee.setStore(branch.getStore());
+                }
+            }
+        }
 
-        employee.setEmail(employeeDTO.getEmail());
-        employee.setFullName(employeeDTO.getFullName());
-        employee.setPhone(employeeDTO.getPhone());
-        employee.setRoles(employeeDTO.getRoles());
-        employee.setPassword(passwordEncoder.encode(employeeDTO.getPassword()));
-        employee.setBranch(branch);
+        if (employeeDTO.getEmail() != null) {
+            employee.setEmail(employeeDTO.getEmail());
+        }
+        if (employeeDTO.getFullName() != null) {
+            employee.setFullName(employeeDTO.getFullName());
+        }
+        if (employeeDTO.getPhone() != null) {
+            employee.setPhone(employeeDTO.getPhone());
+        }
+        if (employeeDTO.getRoles() != null) {
+            employee.setRoles(employeeDTO.getRoles());
+        }
+        if (employeeDTO.getPassword() != null && !employeeDTO.getPassword().isBlank()) {
+            employee.setPassword(passwordEncoder.encode(employeeDTO.getPassword()));
+        }
 
         return UserMapper.toDTO(userRepository.save(employee));
     }
@@ -95,7 +106,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public void deleteEmployee(UUID employeeId) {
         User employee = userRepository.findById(employeeId).orElseThrow(
-                () -> new RuntimeException("Không tìm thấy người dùng")
+                () -> new EntityNotFoundException("Không tìm thấy nhân viên")
         );
         userRepository.delete(employee);
     }
@@ -103,7 +114,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public List<UserDTO> findStoreEmployees(UUID storeId, UserRole role) {
         Store store = storeRepository.findById(storeId).orElseThrow(
-                () -> new RuntimeException("Không tìm thấy store")
+                () -> new EntityNotFoundException("Không tìm thấy cửa hàng")
         );
 
         List<User> employees = userRepository.findByStore(store);
@@ -115,7 +126,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public List<UserDTO> findBranchEmployees(UUID branchId, UserRole role) {
         Branch branch = branchRepository.findById(branchId).orElseThrow(
-                () -> new RuntimeException("Không tìm thấy branch")
+                () -> new EntityNotFoundException("Không tìm thấy chi nhánh")
         );
 
         List<User> employees = userRepository.findByBranch(branch);

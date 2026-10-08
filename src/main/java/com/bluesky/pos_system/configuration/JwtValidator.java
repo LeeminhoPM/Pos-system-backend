@@ -24,7 +24,7 @@ public class JwtValidator extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String jwt = request.getHeader(JwtConstant.JWT_HEADER);
 
-        if (jwt != null) {
+        if (jwt != null && jwt.startsWith("Bearer ")) {
             jwt = jwt.substring(7);
 
             try {
@@ -38,7 +38,7 @@ public class JwtValidator extends OncePerRequestFilter {
                 Authentication authentication = new UsernamePasswordAuthenticationToken(email, null, grantedAuthorities);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception e) {
-                throw new BadCredentialsException("Token không hợp lệ");
+                SecurityContextHolder.clearContext();
             }
         }
 

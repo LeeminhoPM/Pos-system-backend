@@ -10,6 +10,8 @@ public interface InventoryService {
 
     InventoryDTO updateInventory(UUID id, InventoryDTO inventoryDTO);
 
+    InventoryDTO adjustStock(UUID branchId, UUID productId, Integer deltaQuantity);
+
     void deleteInventory(UUID id);
 
     InventoryDTO getInventoryById(UUID id);
@@ -17,4 +19,6 @@ public interface InventoryService {
     InventoryDTO getInventoryByProductIdAndBranchId(UUID productId, UUID branchId);
 
     List<InventoryDTO> getAllInventoryByBranchId(UUID branchId);
+
+    List<InventoryDTO> getLowStockByBranchId(UUID branchId);
 }

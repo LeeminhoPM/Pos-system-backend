@@ -34,12 +34,11 @@ public class ShiftReportServiceImpl implements ShiftReportService {
     public ShiftReportDTO startShift() {
         User cashier = userService.getCurrentUser();
         LocalDateTime shiftStart = LocalDateTime.now();
-        LocalDateTime startOfDay = shiftStart.withHour(0).withMinute(0).withSecond(0);
-        LocalDateTime endOfDay = LocalDateTime.now().withHour(23).withMinute(59).withSecond(59);
 
-        Optional<ShiftReport> existingShiftReport = shiftReportRepository.findByCashierAndShiftStartBetween(cashier, startOfDay, endOfDay);
-        if (existingShiftReport.isPresent()) {
-            throw new RuntimeException("Ca làm này đã tồn tại");
+        // Check if there is an unended shift currently
+        Optional<ShiftReport> ongoingShift = shiftReportRepository.findTopByCashierAndShiftEndIsNullOrderByShiftStartDesc(cashier);
+        if (ongoingShift.isPresent()) {
+            throw new RuntimeException("Bạn đang có một ca làm việc chưa kết thúc. Vui lòng kết thúc ca làm hiện tại trước!");
         }
 
         Branch branch = cashier.getBranch();
@@ -47,6 +46,10 @@ public class ShiftReportServiceImpl implements ShiftReportService {
                 .cashier(cashier)
                 .branch(branch)
                 .shiftStart(shiftStart)
+                .totalSales(0.0)
+                .totalRefunds(0.0)
+                .netSale(0.0)
+                .totalOrders(0)
                 .build();
         return ShiftReportMapper.toDTO(shiftReportRepository.save(shiftReport));
     }
@@ -55,15 +58,16 @@ public class ShiftReportServiceImpl implements ShiftReportService {
     public ShiftReportDTO endShift(LocalDateTime shiftEnd) {
         User cashier = userService.getCurrentUser();
         ShiftReport shiftReport = shiftReportRepository.findTopByCashierAndShiftEndIsNullOrderByShiftStartDesc(cashier).orElseThrow(
-                () -> new EntityNotFoundException("Ca làm không tồn tại")
+                () -> new EntityNotFoundException("Không tìm thấy ca làm việc đang mở để kết thúc")
         );
-        shiftReport.setShiftEnd(shiftEnd);
+        LocalDateTime actualEnd = shiftEnd != null ? shiftEnd : LocalDateTime.now();
+        shiftReport.setShiftEnd(actualEnd);
 
         List<Refund> refunds = refundRepository.findByCashierIdAndCreatedAtBetween(
-                cashier.getId(), shiftReport.getShiftStart(), shiftEnd
+                cashier.getId(), shiftReport.getShiftStart(), actualEnd
         );
         List<Order> orders = orderRepository.findByCashierIdAndCreatedAtBetween(
-                cashier.getId(), shiftReport.getShiftStart(), shiftEnd
+                cashier.getId(), shiftReport.getShiftStart(), actualEnd
         );
 
         return getShiftReportDTO(shiftReport, refunds, orders);
@@ -99,7 +103,7 @@ public class ShiftReportServiceImpl implements ShiftReportService {
     public ShiftReportDTO getCurrentShiftReport() {
         User cashier = userService.getCurrentUser();
         ShiftReport shiftReport = shiftReportRepository.findTopByCashierAndShiftEndIsNullOrderByShiftStartDesc(cashier).orElseThrow(
-                () -> new EntityNotFoundException("Không tìm thấy ca làm")
+                () -> new EntityNotFoundException("Không có ca làm việc nào đang mở")
         );
         LocalDateTime now = LocalDateTime.now();
 
@@ -131,13 +135,14 @@ public class ShiftReportServiceImpl implements ShiftReportService {
         double totalRefunds = refunds.stream().mapToDouble(
                 refund -> refund.getAmount() != null ? refund.getAmount() : 0.0
         ).sum();
-        double totalSales = orders.stream().mapToDouble(Order::getTotalAmount).sum();
+        double totalSales = orders.stream().mapToDouble(
+                order -> order.getTotalAmount() != null ? order.getTotalAmount() : 0.0
+        ).sum();
         int totalOrders = orders.size();
         double netSales = totalSales - totalRefunds;
 
         shiftReport.setTotalSales(totalSales);
         shiftReport.setTotalRefunds(totalRefunds);
-        shiftReport.setTotalSales(totalSales);
         shiftReport.setTotalOrders(totalOrders);
         shiftReport.setNetSale(netSales);
         shiftReport.setRecentOrders(getRecentOrders(orders));
@@ -154,9 +159,11 @@ public class ShiftReportServiceImpl implements ShiftReportService {
         ));
         List<PaymentSummary> paymentSummaries = new ArrayList<>();
         for (Map.Entry<PaymentType, List<Order>> entry : grouped.entrySet()) {
-            double amount = entry.getValue().stream().mapToDouble(Order::getTotalAmount).sum();
+            double amount = entry.getValue().stream().mapToDouble(
+                    o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0.0
+            ).sum();
             int transactions = entry.getValue().size();
-            double percentage = amount * 100 / totalSales;
+            double percentage = totalSales > 0 ? (amount * 100.0 / totalSales) : 0.0;
 
             PaymentSummary paymentSummary = new PaymentSummary();
             paymentSummary.setPaymentType(entry.getKey());
@@ -171,9 +178,14 @@ public class ShiftReportServiceImpl implements ShiftReportService {
     private List<Product> getTopSellingProducts(List<Order> orders) {
         Map<Product, Integer> productSalesMap = new HashMap<>();
         for (Order order : orders) {
-            for (OrderItem item : order.getItems()) {
-                Product product = item.getProduct();
-                productSalesMap.put(product, productSalesMap.getOrDefault(product, 0) + 1);
+            if (order.getItems() != null) {
+                for (OrderItem item : order.getItems()) {
+                    Product product = item.getProduct();
+                    if (product != null) {
+                        int qty = item.getQuantity() != null ? item.getQuantity() : 1;
+                        productSalesMap.put(product, productSalesMap.getOrDefault(product, 0) + qty);
+                    }
+                }
             }
         }
         return productSalesMap.entrySet().stream().sorted(
@@ -182,6 +194,10 @@ public class ShiftReportServiceImpl implements ShiftReportService {
     }
 
     private List<Order> getRecentOrders(List<Order> orders) {
-        return orders.stream().sorted(Comparator.comparing(Order::getCreatedAt).reversed()).limit(5).collect(Collectors.toList());
+        return orders.stream()
+                .filter(o -> o.getCreatedAt() != null)
+                .sorted(Comparator.comparing(Order::getCreatedAt).reversed())
+                .limit(5)
+                .collect(Collectors.toList());
     }
 }

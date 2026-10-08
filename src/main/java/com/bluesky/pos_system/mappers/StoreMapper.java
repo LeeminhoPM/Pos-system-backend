@@ -6,6 +6,7 @@ import com.bluesky.pos_system.payload.dto.StoreDTO;
 
 public class StoreMapper {
     public static StoreDTO toDTO(Store store) {
+        if (store == null) return null;
         return StoreDTO.builder()
                 .id(store.getId())
                 .branch(store.getBranch())

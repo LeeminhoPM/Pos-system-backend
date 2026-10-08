@@ -1,5 +1,6 @@
 package com.bluesky.pos_system.payload.dto;
 
+import com.bluesky.pos_system.domains.ProductStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -18,23 +19,47 @@ public class ProductDTO {
 
     String sku;
 
+    String barcode;
+
     String description;
 
     Double mrp;
 
+    Double costPrice;
+
     Double sellingPrice;
+
+    Double vatRate;
 
     String brand;
 
     String image;
 
+    Integer minStockLevel;
+
+    Boolean isActive;
+
+    ProductStatus status;
+
+    Boolean isDeleted;
+
+    Double profitAmount;
+
+    Double profitMargin;
+
     CategoryDTO category;
 
     UUID categoryId;
 
+    SupplierDTO supplier;
+
+    UUID supplierId;
+
     StoreDTO store;
 
     UUID storeId;
+
+    Integer currentStock;
 
     LocalDateTime createdAt;
 

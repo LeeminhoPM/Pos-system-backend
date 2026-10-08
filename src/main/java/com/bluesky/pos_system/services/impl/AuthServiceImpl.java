@@ -38,14 +38,15 @@ public class AuthServiceImpl implements AuthService {
         if (user != null) {
             throw new UserException("Email này đã được đăng kí");
         }
-        if (userDTO.getRoles().equals(UserRole.ROLE_ADMIN)) {
+        UserRole role = userDTO.getRoles() != null ? userDTO.getRoles() : UserRole.ROLE_STORE_ADMIN;
+        if (role == UserRole.ROLE_ADMIN) {
             throw new UserException("Tài khoản admin không hỗ trợ");
         }
 
         User newUser = User.builder()
                 .email(userDTO.getEmail())
                 .password(passwordEncoder.encode(userDTO.getPassword()))
-                .roles(userDTO.getRoles())
+                .roles(role)
                 .fullName(userDTO.getFullName())
                 .phone(userDTO.getPhone())
                 .lastLogin(LocalDateTime.now())

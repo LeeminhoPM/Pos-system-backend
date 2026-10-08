@@ -1,5 +1,6 @@
 package com.bluesky.pos_system.payload.dto;
 
+import com.bluesky.pos_system.domains.OrderStatus;
 import com.bluesky.pos_system.domains.PaymentType;
 import com.bluesky.pos_system.models.Customer;
 import lombok.*;
@@ -17,9 +18,21 @@ import java.util.UUID;
 public class OrderDTO {
     UUID id;
 
+    String orderNumber;
+
+    Double subtotal;
+
+    Double discount;
+
+    Double tax;
+
     Double totalAmount;
 
+    OrderStatus status;
+
     LocalDateTime createdAt;
+
+    LocalDateTime updatedAt;
 
     UUID branchId;
 
@@ -34,4 +47,6 @@ public class OrderDTO {
     List<OrderItemDTO> items;
 
     PaymentType paymentType;
+
+    String notes;
 }

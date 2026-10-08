@@ -10,6 +10,8 @@ public interface CategoryService {
 
     List<CategoryDTO> getAllCategoriesByStore(UUID storeId);
 
+    List<CategoryDTO> getCategoryTreeByStore(UUID storeId);
+
     CategoryDTO updateCategory(UUID id, CategoryDTO categoryDTO);
 
     void deleteCategory(UUID id);

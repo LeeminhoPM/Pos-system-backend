@@ -3,12 +3,14 @@ package com.bluesky.pos_system.services.impl;
 import com.bluesky.pos_system.configuration.JwtProvider;
 import com.bluesky.pos_system.exceptions.UserException;
 import com.bluesky.pos_system.models.User;
+import com.bluesky.pos_system.payload.dto.ChangePasswordDTO;
 import com.bluesky.pos_system.repositories.UserRepository;
 import com.bluesky.pos_system.services.UserService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
     UserRepository userRepository;
     JwtProvider jwtProvider;
+    PasswordEncoder passwordEncoder;
 
     @Override
     public User getUserFromJwtToken(String jwtToken) throws UserException {
@@ -58,5 +61,18 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+
+    @Override
+    public void changePassword(ChangePasswordDTO dto) throws UserException {
+        User user = getCurrentUser();
+        if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
+            throw new UserException("Mật khẩu hiện tại không chính xác");
+        }
+        if (dto.getNewPassword() == null || dto.getNewPassword().length() < 6) {
+            throw new UserException("Mật khẩu mới phải có ít nhất 6 ký tự");
+        }
+        user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        userRepository.save(user);
     }
 }

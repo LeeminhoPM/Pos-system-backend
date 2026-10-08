@@ -1,12 +1,14 @@
 package com.bluesky.pos_system.payload.dto;
 
-import com.bluesky.pos_system.models.Store;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
 import java.util.UUID;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CategoryDTO {
@@ -14,7 +16,19 @@ public class CategoryDTO {
 
     String name;
 
-    Store store;
+    String slug;
+
+    String description;
+
+    Boolean isActive;
+
+    UUID parentId;
+
+    String parentName;
+
+    List<CategoryDTO> subCategories;
+
+    StoreDTO store;
 
     UUID storeId;
 }

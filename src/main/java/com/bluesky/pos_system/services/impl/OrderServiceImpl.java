@@ -5,8 +5,7 @@ import com.bluesky.pos_system.domains.PaymentType;
 import com.bluesky.pos_system.mappers.OrderMapper;
 import com.bluesky.pos_system.models.*;
 import com.bluesky.pos_system.payload.dto.OrderDTO;
-import com.bluesky.pos_system.repositories.OrderRepository;
-import com.bluesky.pos_system.repositories.ProductRepository;
+import com.bluesky.pos_system.repositories.*;
 import com.bluesky.pos_system.services.OrderService;
 import com.bluesky.pos_system.services.UserService;
 import jakarta.persistence.EntityNotFoundException;
@@ -14,9 +13,11 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,39 +27,95 @@ import java.util.UUID;
 public class OrderServiceImpl implements OrderService {
     OrderRepository orderRepository;
     ProductRepository productRepository;
+    CustomerRepository customerRepository;
+    InventoryRepository inventoryRepository;
+    BranchRepository branchRepository;
     UserService userService;
 
     @Override
+    @Transactional
     public OrderDTO createOrder(OrderDTO orderDTO) {
-        User cashier = userService.getCurrentUser();
-        Branch branch = cashier.getBranch();
-        if (branch == null) {
-            throw new RuntimeException("Không tìm thấy branch");
+        User cashier = null;
+        try {
+            cashier = userService.getCurrentUser();
+        } catch (Exception ignored) {
         }
 
+        Branch branch = null;
+        if (orderDTO.getBranchId() != null) {
+            branch = branchRepository.findById(orderDTO.getBranchId()).orElse(null);
+        }
+        if (branch == null && cashier != null) {
+            branch = cashier.getBranch();
+        }
+        if (branch == null) {
+            throw new RuntimeException("Không tìm thấy chi nhánh hợp lệ để tạo đơn hàng");
+        }
+
+        Customer customer = null;
+        if (orderDTO.getCustomerId() != null) {
+            customer = customerRepository.findById(orderDTO.getCustomerId()).orElse(null);
+        } else if (orderDTO.getCustomer() != null && orderDTO.getCustomer().getId() != null) {
+            customer = customerRepository.findById(orderDTO.getCustomer().getId()).orElse(null);
+        }
+
+        String orderNumber = "ORD-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                + "-" + String.format("%04d", (int)(Math.random() * 10000));
+
         Order order = Order.builder()
+                .orderNumber(orderNumber)
                 .branch(branch)
                 .cashier(cashier)
-                .customer(orderDTO.getCustomer())
-                .paymentType(orderDTO.getPaymentType())
+                .customer(customer)
+                .paymentType(orderDTO.getPaymentType() != null ? orderDTO.getPaymentType() : PaymentType.CASH)
+                .status(orderDTO.getStatus() != null ? orderDTO.getStatus() : OrderStatus.COMPLETED)
+                .notes(orderDTO.getNotes())
                 .build();
 
+        final Branch finalBranch = branch;
         List<OrderItem> orderItems = orderDTO.getItems().stream().map(
                 orderItemDTO -> {
                     Product product = productRepository.findById(orderItemDTO.getProductId()).orElseThrow(
-                            () -> new EntityNotFoundException("Không tìm thấy sản phẩm")
+                            () -> new EntityNotFoundException("Không tìm thấy sản phẩm với id: " + orderItemDTO.getProductId())
                     );
+                    int qty = orderItemDTO.getQuantity() != null ? orderItemDTO.getQuantity() : 1;
+                    double itemPrice = (product.getSellingPrice() != null ? product.getSellingPrice() : 0.0) * qty;
+
+                    // Deduct inventory stock for the branch
+                    Inventory inventory = inventoryRepository.findByProductIdAndBranchId(product.getId(), finalBranch.getId());
+                    if (inventory != null) {
+                        int remaining = Math.max(0, inventory.getQuantity() - qty);
+                        inventory.setQuantity(remaining);
+                        inventoryRepository.save(inventory);
+                    }
+
                     return OrderItem.builder()
                             .product(product)
-                            .quantity(orderItemDTO.getQuantity())
-                            .price(product.getSellingPrice() * orderItemDTO.getQuantity())
+                            .quantity(qty)
+                            .price(itemPrice)
                             .order(order)
                             .build();
                 }
         ).toList();
-        double total = orderItems.stream().mapToDouble(OrderItem::getPrice).sum();
+
+        double subtotal = orderItems.stream().mapToDouble(OrderItem::getPrice).sum();
+        double discount = orderDTO.getDiscount() != null ? orderDTO.getDiscount() : 0.0;
+        double tax = orderDTO.getTax() != null ? orderDTO.getTax() : 0.0;
+        double total = Math.max(0.0, subtotal - discount + tax);
+
+        order.setSubtotal(subtotal);
+        order.setDiscount(discount);
+        order.setTax(tax);
         order.setTotalAmount(total);
         order.setItems(orderItems);
+
+        // Update customer totalSpent & loyaltyPoints
+        if (customer != null) {
+            customer.setTotalSpent((customer.getTotalSpent() != null ? customer.getTotalSpent() : 0.0) + total);
+            int earnedPoints = (int) (total / 10000.0);
+            customer.setLoyaltyPoints((customer.getLoyaltyPoints() != null ? customer.getLoyaltyPoints() : 0) + earnedPoints);
+            customerRepository.save(customer);
+        }
 
         return OrderMapper.toDTO(orderRepository.save(order));
     }
@@ -66,7 +123,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void deleteOrder(UUID id) {
         Order order = orderRepository.findById(id).orElseThrow(
-                () -> new EntityNotFoundException("Không tìm thấy sản phẩm")
+                () -> new EntityNotFoundException("Không tìm thấy đơn hàng")
         );
         orderRepository.delete(order);
     }
@@ -80,16 +137,22 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public OrderDTO updateOrderStatus(UUID id, OrderStatus status) {
+        Order order = orderRepository.findById(id).orElseThrow(
+                () -> new EntityNotFoundException("Không tìm thấy đơn hàng")
+        );
+        order.setStatus(status);
+        return OrderMapper.toDTO(orderRepository.save(order));
+    }
+
+    @Override
     public List<OrderDTO> getOrderByBranch(UUID branchId, UUID customerId, UUID cashierId, PaymentType paymentType, OrderStatus orderStatus) {
-        List<Order> orders = orderRepository.findByBranchId(branchId).stream().filter(
-                order -> customerId == null ||
-                        (order.getCustomer() != null && order.getCustomer().getId().equals(customerId))
-        ).filter(
-                order -> cashierId == null ||
-                        (order.getCashier() != null && order.getCashier().getId().equals(cashierId))
-        ).filter(
-                order -> paymentType == null || order.getPaymentType() == paymentType
-        ).toList();
+        List<Order> orders = orderRepository.findByBranchId(branchId).stream()
+                .filter(order -> customerId == null || (order.getCustomer() != null && order.getCustomer().getId().equals(customerId)))
+                .filter(order -> cashierId == null || (order.getCashier() != null && order.getCashier().getId().equals(cashierId)))
+                .filter(order -> paymentType == null || order.getPaymentType() == paymentType)
+                .filter(order -> orderStatus == null || order.getStatus() == orderStatus)
+                .toList();
         return orders.stream().map(OrderMapper::toDTO).toList();
     }
 
