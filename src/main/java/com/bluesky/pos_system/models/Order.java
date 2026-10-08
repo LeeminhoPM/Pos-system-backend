@@ -43,15 +43,16 @@ public class Order {
 
     String notes;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     Branch branch;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     User cashier;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     Customer customer;
 
+    @org.hibernate.annotations.BatchSize(size = 25)
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     List<OrderItem> items;
 

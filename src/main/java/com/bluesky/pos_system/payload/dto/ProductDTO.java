@@ -12,7 +12,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ProductDTO {
+public class ProductDTO implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
+
     UUID id;
 
     String name;

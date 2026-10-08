@@ -14,6 +14,8 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.text.Normalizer;
@@ -42,6 +44,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @CacheEvict(value = {"categories", "categoryTrees"}, allEntries = true)
     public CategoryDTO createCategory(CategoryDTO categoryDTO) {
         User user = null;
         try {
@@ -86,18 +89,21 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Cacheable(value = "categories", key = "#storeId")
     public List<CategoryDTO> getAllCategoriesByStore(UUID storeId) {
         List<Category> categories = categoryRepository.findByStoreId(storeId);
         return categories.stream().map(CategoryMapper::toDTO).toList();
     }
 
     @Override
+    @Cacheable(value = "categoryTrees", key = "#storeId")
     public List<CategoryDTO> getCategoryTreeByStore(UUID storeId) {
         List<Category> rootCategories = categoryRepository.findByStoreIdAndParentIsNull(storeId);
         return rootCategories.stream().map(CategoryMapper::toDTO).toList();
     }
 
     @Override
+    @CacheEvict(value = {"categories", "categoryTrees"}, allEntries = true)
     public CategoryDTO updateCategory(UUID id, CategoryDTO categoryDTO) {
         Category category = categoryRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException("Không tìm thấy danh mục")
@@ -123,6 +129,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @CacheEvict(value = {"categories", "categoryTrees"}, allEntries = true)
     public void deleteCategory(UUID id) {
         Category category = categoryRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException("Không tìm thấy danh mục")

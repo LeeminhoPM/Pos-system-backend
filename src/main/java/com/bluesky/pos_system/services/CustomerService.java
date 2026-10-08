@@ -17,4 +17,6 @@ public interface CustomerService {
     Customer findCustomerById(UUID id);
 
     List<Customer> searchCustomer(String keyword);
+
+    com.bluesky.pos_system.payload.dto.PageResponse<Customer> getCustomersPaged(int page, int size, String keyword);
 }

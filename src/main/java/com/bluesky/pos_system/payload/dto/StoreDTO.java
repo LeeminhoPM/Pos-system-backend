@@ -13,7 +13,9 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class StoreDTO {
+public class StoreDTO implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
+
     UUID id;
 
     String branch;

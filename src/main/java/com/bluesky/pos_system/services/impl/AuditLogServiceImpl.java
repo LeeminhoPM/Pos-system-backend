@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.List;
 public class AuditLogServiceImpl implements AuditLogService {
     AuditLogRepository auditLogRepository;
 
+    @Async("posAsyncExecutor")
     @Override
     public void logAction(AuditAction action, String entityName, String entityId, String performedBy, String details, String ipAddress) {
         AuditLog log = AuditLog.builder()

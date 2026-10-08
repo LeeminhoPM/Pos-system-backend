@@ -135,7 +135,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderDTO getOrderById(UUID orderId) {
-        Order order = orderRepository.findById(orderId).orElseThrow(
+        Order order = orderRepository.findWithDetailsById(orderId).orElseThrow(
                 () -> new EntityNotFoundException("Không tìm thấy đơn hàng")
         );
         return OrderMapper.toDTO(order);
@@ -152,13 +152,30 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<OrderDTO> getOrderByBranch(UUID branchId, UUID customerId, UUID cashierId, PaymentType paymentType, OrderStatus orderStatus) {
-        List<Order> orders = orderRepository.findByBranchId(branchId).stream()
-                .filter(order -> customerId == null || (order.getCustomer() != null && order.getCustomer().getId().equals(customerId)))
-                .filter(order -> cashierId == null || (order.getCashier() != null && order.getCashier().getId().equals(cashierId)))
-                .filter(order -> paymentType == null || order.getPaymentType() == paymentType)
-                .filter(order -> orderStatus == null || order.getStatus() == orderStatus)
+        org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(
+                0, 200, org.springframework.data.domain.Sort.by("createdAt").descending());
+        return orderRepository.findFilteredOrders(branchId, customerId, cashierId, paymentType, orderStatus, pageRequest)
+                .getContent().stream()
+                .map(OrderMapper::toDTO)
                 .toList();
-        return orders.stream().map(OrderMapper::toDTO).toList();
+    }
+
+    @Override
+    public com.bluesky.pos_system.payload.dto.PageResponse<OrderDTO> getOrdersPaged(
+            UUID branchId, UUID customerId, UUID cashierId, PaymentType paymentType, OrderStatus orderStatus, int page, int size) {
+        org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(
+                page, size, org.springframework.data.domain.Sort.by("createdAt").descending());
+        org.springframework.data.domain.Page<Order> orderPage = orderRepository.findFilteredOrders(
+                branchId, customerId, cashierId, paymentType, orderStatus, pageRequest);
+        List<OrderDTO> dtoList = orderPage.getContent().stream().map(OrderMapper::toDTO).toList();
+        return com.bluesky.pos_system.payload.dto.PageResponse.<OrderDTO>builder()
+                .content(dtoList)
+                .pageNumber(orderPage.getNumber())
+                .pageSize(orderPage.getSize())
+                .totalElements(orderPage.getTotalElements())
+                .totalPages(orderPage.getTotalPages())
+                .isLast(orderPage.isLast())
+                .build();
     }
 
     @Override

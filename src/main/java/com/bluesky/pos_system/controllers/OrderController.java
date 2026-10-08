@@ -55,6 +55,22 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @Operation(summary = "Phân trang và lọc danh sách đơn hàng", description = "Tối ưu hóa hiệu năng cho dữ liệu lớn với pagination và index scan")
+    @GetMapping("/branch/{branchId}/paged")
+    public ResponseEntity<com.bluesky.pos_system.payload.dto.PageResponse<OrderDTO>> getOrdersPagedByBranch(
+            @PathVariable UUID branchId,
+            @RequestParam(required = false) UUID customerId,
+            @RequestParam(required = false) UUID cashierId,
+            @RequestParam(required = false) PaymentType paymentType,
+            @RequestParam(required = false) OrderStatus orderStatus,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        com.bluesky.pos_system.payload.dto.PageResponse<OrderDTO> response = orderService.getOrdersPaged(
+                branchId, customerId, cashierId, paymentType, orderStatus, page, size);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
     @GetMapping("/cashier/{cashierId}")
     public ResponseEntity<List<OrderDTO>> getOrderByCashier(@PathVariable UUID cashierId) {
         List<OrderDTO> response = orderService.getOrderByCashier(cashierId);

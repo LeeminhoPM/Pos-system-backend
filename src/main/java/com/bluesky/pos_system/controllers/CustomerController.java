@@ -50,6 +50,16 @@ public class CustomerController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @Operation(summary = "Phân trang và tìm kiếm danh sách khách hàng", description = "Tối ưu hóa query database cho tập dữ liệu khách hàng lớn")
+    @GetMapping("/paged")
+    public ResponseEntity<com.bluesky.pos_system.payload.dto.PageResponse<Customer>> getCustomersPaged(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String keyword) {
+        com.bluesky.pos_system.payload.dto.PageResponse<Customer> response = customerService.getCustomersPaged(page, size, keyword);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
     @GetMapping("/search")
     public ResponseEntity<List<Customer>> searchCustomer(@RequestParam String keyword) {
         List<Customer> response = customerService.searchCustomer(keyword);

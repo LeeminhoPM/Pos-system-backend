@@ -11,7 +11,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CategoryDTO {
+public class CategoryDTO implements java.io.Serializable {
+    private static final long serialVersionUID = 1L;
+
     UUID id;
 
     @jakarta.validation.constraints.NotBlank(message = "Tên danh mục không được để trống")

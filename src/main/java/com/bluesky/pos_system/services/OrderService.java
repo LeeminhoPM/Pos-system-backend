@@ -25,4 +25,7 @@ public interface OrderService {
     List<OrderDTO> getTodayOrderByBranch(UUID branchId);
 
     List<OrderDTO> getTop5RecentOrderByBranch(UUID branchId);
+
+    com.bluesky.pos_system.payload.dto.PageResponse<OrderDTO> getOrdersPaged(
+            UUID branchId, UUID customerId, UUID cashierId, PaymentType paymentType, OrderStatus orderStatus, int page, int size);
 }

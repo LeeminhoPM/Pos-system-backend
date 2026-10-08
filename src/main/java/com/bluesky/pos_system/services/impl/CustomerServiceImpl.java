@@ -77,4 +77,26 @@ public class CustomerServiceImpl implements CustomerService {
         }
         return customerRepository.findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrPhoneContaining(keyword, keyword, keyword);
     }
+
+    @Override
+    public com.bluesky.pos_system.payload.dto.PageResponse<Customer> getCustomersPaged(int page, int size, String keyword) {
+        org.springframework.data.domain.PageRequest pageRequest = org.springframework.data.domain.PageRequest.of(
+                page, size, org.springframework.data.domain.Sort.by("createdAt").descending());
+        org.springframework.data.domain.Page<Customer> pageResult;
+        if (keyword != null && !keyword.isBlank()) {
+            String kw = keyword.trim();
+            pageResult = customerRepository.findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrPhoneContaining(kw, kw, kw, pageRequest);
+        } else {
+            pageResult = customerRepository.findAll(pageRequest);
+        }
+
+        return com.bluesky.pos_system.payload.dto.PageResponse.<Customer>builder()
+                .content(pageResult.getContent())
+                .pageNumber(pageResult.getNumber())
+                .pageSize(pageResult.getSize())
+                .totalElements(pageResult.getTotalElements())
+                .totalPages(pageResult.getTotalPages())
+                .isLast(pageResult.isLast())
+                .build();
+    }
 }

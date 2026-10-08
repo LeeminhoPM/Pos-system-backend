@@ -13,26 +13,37 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.jpa.repository.EntityGraph;
+
 @Repository
 public interface ProductRepository extends JpaRepository<Product, UUID> {
     List<Product> findByStoreId(UUID storeId);
 
+    @EntityGraph(attributePaths = {"category", "supplier", "store"})
     List<Product> findByStoreIdAndIsDeletedFalse(UUID storeId);
 
+    @EntityGraph(attributePaths = {"category", "supplier", "store"})
     Page<Product> findByStoreIdAndIsDeletedFalse(UUID storeId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"category", "supplier", "store"})
     Optional<Product> findByIdAndIsDeletedFalse(UUID id);
 
+    @EntityGraph(attributePaths = {"category", "supplier", "store"})
     Optional<Product> findBySkuAndStoreIdAndIsDeletedFalse(String sku, UUID storeId);
 
+    @EntityGraph(attributePaths = {"category", "supplier", "store"})
     Optional<Product> findByBarcodeAndStoreIdAndIsDeletedFalse(String barcode, UUID storeId);
 
+    @EntityGraph(attributePaths = {"category", "supplier", "store"})
     List<Product> findByStoreIdAndCategoryIdAndIsDeletedFalse(UUID storeId, UUID categoryId);
 
+    @EntityGraph(attributePaths = {"category", "supplier", "store"})
     List<Product> findByStoreIdAndSupplierIdAndIsDeletedFalse(UUID storeId, UUID supplierId);
 
+    @EntityGraph(attributePaths = {"category", "supplier", "store"})
     List<Product> findByStoreIdAndStatusAndIsDeletedFalse(UUID storeId, ProductStatus status);
 
+    @EntityGraph(attributePaths = {"category", "supplier", "store"})
     @Query("SELECT p FROM Product p WHERE p.store.id = :storeId AND p.isDeleted = false AND (" +
             "LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
             "LOWER(p.brand) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
@@ -41,6 +52,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
             ")")
     List<Product> searchByKeyword(@Param("storeId") UUID storeId, @Param("query") String query);
 
+    @EntityGraph(attributePaths = {"category", "supplier", "store"})
     @Query("SELECT p FROM Product p WHERE p.store.id = :storeId AND p.isDeleted = false AND (" +
             "(:keyword IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
             "(:categoryId IS NULL OR p.category.id = :categoryId) AND " +

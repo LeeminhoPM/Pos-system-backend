@@ -22,9 +22,9 @@ public class OrderItem {
 
     Double price;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     Product product;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     Order order;
 }

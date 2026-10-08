@@ -21,6 +21,8 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,6 +78,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "products", key = "#id")
     public ProductDTO updateProduct(UUID id, ProductDTO productDTO, User user) {
         Product product = productRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException("Không tìm thấy sản phẩm")
@@ -120,6 +123,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = "products", key = "#id")
     public ProductDTO getProductById(UUID id) {
         Product product = productRepository.findByIdAndIsDeletedFalse(id).orElseThrow(
                 () -> new EntityNotFoundException("Không tìm thấy sản phẩm với id: " + id)
@@ -129,12 +133,14 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "products", key = "#id")
     public void deleteProduct(UUID id, User user) {
         softDeleteProduct(id, user);
     }
 
     @Override
     @Transactional
+    @CacheEvict(value = "products", key = "#id")
     public void softDeleteProduct(UUID id, User user) {
         Product product = productRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException("Không tìm thấy sản phẩm")
