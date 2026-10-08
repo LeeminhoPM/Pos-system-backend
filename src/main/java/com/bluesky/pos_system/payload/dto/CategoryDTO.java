@@ -14,6 +14,7 @@ import java.util.UUID;
 public class CategoryDTO {
     UUID id;
 
+    @jakarta.validation.constraints.NotBlank(message = "Tên danh mục không được để trống")
     String name;
 
     String slug;

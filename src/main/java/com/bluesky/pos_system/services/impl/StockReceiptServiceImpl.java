@@ -13,6 +13,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -117,7 +119,10 @@ public class StockReceiptServiceImpl implements StockReceiptService {
         receipt.setItems(items);
         receipt.setTotalAmount(totalAmount);
 
-        return StockReceiptMapper.toDTO(stockReceiptRepository.save(receipt));
+        StockReceipt savedReceipt = stockReceiptRepository.save(receipt);
+        log.info("Stock receipt processed: receiptNumber={}, type={}, branchId={}, itemsCount={}, totalAmount={}",
+                savedReceipt.getReceiptNumber(), savedReceipt.getType(), branch.getId(), items.size(), totalAmount);
+        return StockReceiptMapper.toDTO(savedReceipt);
     }
 
     @Override

@@ -25,7 +25,7 @@ public class CategoryController {
 
     @PostMapping
     @Operation(summary = "Create a new category with optional parent category")
-    public ResponseEntity<CategoryDTO> createCategory(@RequestBody CategoryDTO categoryDTO) {
+    public ResponseEntity<CategoryDTO> createCategory(@jakarta.validation.Valid @RequestBody CategoryDTO categoryDTO) {
         CategoryDTO response = categoryService.createCategory(categoryDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -46,7 +46,7 @@ public class CategoryController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing category")
-    public ResponseEntity<CategoryDTO> updateCategory(@PathVariable UUID id, @RequestBody CategoryDTO categoryDTO) {
+    public ResponseEntity<CategoryDTO> updateCategory(@PathVariable UUID id, @jakarta.validation.Valid @RequestBody CategoryDTO categoryDTO) {
         CategoryDTO response = categoryService.updateCategory(id, categoryDTO);
         return ResponseEntity.ok(response);
     }

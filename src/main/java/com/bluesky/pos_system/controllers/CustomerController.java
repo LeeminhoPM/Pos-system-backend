@@ -21,13 +21,13 @@ public class CustomerController {
     CustomerService customerService;
 
     @PostMapping
-    public ResponseEntity<Customer> createCustomer(@RequestBody Customer customer) {
+    public ResponseEntity<Customer> createCustomer(@jakarta.validation.Valid @RequestBody Customer customer) {
         Customer response = customerService.createCustomer(customer);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Customer> updateCustomer(@PathVariable UUID id, @RequestBody Customer customer) {
+    public ResponseEntity<Customer> updateCustomer(@PathVariable UUID id, @jakarta.validation.Valid @RequestBody Customer customer) {
         Customer response = customerService.updateCustomer(id, customer);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }

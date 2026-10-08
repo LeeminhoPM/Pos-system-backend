@@ -18,11 +18,13 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -63,6 +65,7 @@ public class AuthServiceImpl implements AuthService {
         authResponse.setMessage("Đăng kí tài khoản thành công");
         authResponse.setUser(UserMapper.toDTO(savedUser));
 
+        log.info("New user registered successfully: email={}, role={}", savedUser.getEmail(), role);
         return authResponse;
     }
 
@@ -83,6 +86,8 @@ public class AuthServiceImpl implements AuthService {
         user.setLastLogin(LocalDateTime.now());
         User savedUser = userRepository.save(user);
 
+        log.info("User logged in successfully: email={}, role={}", email, roles);
+
         AuthResponse authResponse = new AuthResponse();
         authResponse.setJwt(jwt);
         authResponse.setMessage("Đăng nhập thành công");
@@ -95,10 +100,12 @@ public class AuthServiceImpl implements AuthService {
         UserDetails userDetails = customUserImplement.loadUserByUsername(email);
 
         if (userDetails == null) {
+            log.warn("Authentication failed: user not found with email={}", email);
             throw new UserException("Sai thông tin đăng nhập");
         }
 
         if (!passwordEncoder.matches(password, userDetails.getPassword())) {
+            log.warn("Authentication failed: incorrect password for email={}", email);
             throw new UserException("Sai thông tin đăng nhập");
         }
 

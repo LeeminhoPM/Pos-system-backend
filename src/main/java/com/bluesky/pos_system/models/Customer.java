@@ -24,9 +24,11 @@ public class Customer {
     @Column(unique = true)
     String customerCode;
 
+    @jakarta.validation.constraints.NotBlank(message = "Họ và tên khách hàng không được để trống")
     @Column(nullable = false)
     String fullName;
 
+    @jakarta.validation.constraints.Email(message = "Email không đúng định dạng")
     String email;
 
     String phone;

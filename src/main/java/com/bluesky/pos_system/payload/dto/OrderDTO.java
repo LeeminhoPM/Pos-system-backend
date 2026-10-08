@@ -44,6 +44,8 @@ public class OrderDTO {
 
     Customer customer;
 
+    @jakarta.validation.constraints.NotEmpty(message = "Đơn hàng phải có ít nhất một sản phẩm")
+    @jakarta.validation.Valid
     List<OrderItemDTO> items;
 
     PaymentType paymentType;

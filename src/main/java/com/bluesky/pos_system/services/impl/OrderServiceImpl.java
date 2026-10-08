@@ -12,6 +12,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -117,7 +119,10 @@ public class OrderServiceImpl implements OrderService {
             customerRepository.save(customer);
         }
 
-        return OrderMapper.toDTO(orderRepository.save(order));
+        Order savedOrder = orderRepository.save(order);
+        log.info("Order created successfully: orderNumber={}, branchId={}, totalAmount={}, itemsCount={}",
+                savedOrder.getOrderNumber(), finalBranch.getId(), savedOrder.getTotalAmount(), orderItems.size());
+        return OrderMapper.toDTO(savedOrder);
     }
 
     @Override
