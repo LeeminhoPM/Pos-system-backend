@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # ========================================================
+  # MySQL Database Service
+  # ========================================================
+  mysql:
+    image: mysql:8.0
+    container_name: skypos-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-pos_system}
+      MYSQL_USER: ${DB_USERNAME:-posuser}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-pospassword}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - skypos-network
+
+  # ========================================================
+  # Redis In-Memory Cache Service
+  # ========================================================
+  redis:
+    image: redis:7-alpine
+    container_name: skypos-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - skypos-network
+
+  # ========================================================
+  # Spring Boot POS API Backend
+  # ========================================================
+  pos-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: skypos-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      SERVER_PORT: 5000
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-dev}
+      DB_URL: jdbc:mysql://mysql:3306/${DB_NAME:-pos_system}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-zntuceyczbzgazycopqqwvryithxbewcymywpyqcehlpgxzwowgmqsmizmvremjncvqxqrnjwoidanptqzxomilyhmeeclqobxjipuxzegyfrqxevrekglqkjgnhgnsmhaqofiycmqqgrpcnznebbyvajqclvqzw}
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - skypos-network
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  skypos-network:
+    driver: bridge
