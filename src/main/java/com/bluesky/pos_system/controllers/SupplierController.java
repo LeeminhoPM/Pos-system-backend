@@ -20,7 +20,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/suppliers")
+@RequestMapping({"/api/v1/suppliers", "/api/suppliers"})
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Supplier Management", description = "APIs for managing suppliers and vendor procurement")
 public class SupplierController {

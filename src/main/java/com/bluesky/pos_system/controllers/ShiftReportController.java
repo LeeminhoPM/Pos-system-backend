@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/shift-reports")
+@RequestMapping({"/api/v1/shift-reports", "/api/shift-reports"})
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ShiftReportController {
     ShiftReportService shiftReportService;

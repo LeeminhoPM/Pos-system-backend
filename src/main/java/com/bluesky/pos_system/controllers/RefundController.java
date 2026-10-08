@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/refunds")
+@RequestMapping({"/api/v1/refunds", "/api/refunds"})
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class RefundController {
     RefundService refundService;

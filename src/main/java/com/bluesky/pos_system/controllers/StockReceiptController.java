@@ -20,7 +20,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/stock-receipts")
+@RequestMapping({"/api/v1/stock-receipts", "/api/stock-receipts"})
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Stock Receipts & Inventory History", description = "APIs for warehouse stock-in, stock-out receipts, and inventory tracking")
 public class StockReceiptController {

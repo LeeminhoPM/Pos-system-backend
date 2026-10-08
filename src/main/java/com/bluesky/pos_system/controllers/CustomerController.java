@@ -13,10 +13,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/customers")
+@RequestMapping({"/api/v1/customers", "/api/customers"})
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Tag(name = "Customer & Loyalty Management", description = "Quản lý hồ sơ khách hàng, tích điểm thưởng loyalty, tìm kiếm theo số điện thoại")
 public class CustomerController {
     CustomerService customerService;
 

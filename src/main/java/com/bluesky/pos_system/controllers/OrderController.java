@@ -14,10 +14,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/orders")
+@RequestMapping({"/api/v1/orders", "/api/orders"})
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Tag(name = "Order Management", description = "Quản lý đơn hàng, chi tiết hóa đơn, chuyển trạng thái và thống kê theo chi nhánh")
 public class OrderController {
     OrderService orderService;
 

@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/analytics")
+@RequestMapping({"/api/v1/analytics", "/api/analytics"})
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Analytics & Reports", description = "APIs for dashboard metrics, revenue, sales charts, and top products")
 public class AnalyticsController {

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/audit-logs")
+@RequestMapping({"/api/v1/audit-logs", "/api/audit-logs"})
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Audit Logs", description = "APIs for tracking system security and administrative activity logs")
 public class AuditLogController {

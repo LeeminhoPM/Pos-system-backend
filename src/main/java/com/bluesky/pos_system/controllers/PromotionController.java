@@ -22,7 +22,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/promotions")
+@RequestMapping({"/api/v1/promotions", "/api/promotions"})
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Promotion & Discount Management", description = "APIs for vouchers, coupons, discounts, and real-time promo validation")
 public class PromotionController {
