@@ -1,31 +1,19 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Sparkles, ArrowRight, Lock, Mail, Store, ShieldCheck } from "lucide-react";
+import { Sparkles, ShieldCheck, Store } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import LoginForm from "@/features/auth/components/LoginForm";
 
 export default function Login() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const { login, isLoading, error } = useAuthStore();
+    const { login } = useAuthStore();
     const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const success = await login(email, password);
-        if (success) {
-            navigate("/");
-        }
-    };
-
     const handleQuickLogin = async (demoEmail, demoPassword) => {
-        setEmail(demoEmail);
-        setPassword(demoPassword);
         const success = await login(demoEmail, demoPassword);
         if (success) {
-            navigate("/");
+            navigate("/pos");
         }
     };
 
@@ -53,54 +41,8 @@ export default function Login() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {error && (
-                            <div className="p-3 text-xs rounded-lg bg-destructive/10 text-destructive border border-destructive/20 font-medium">
-                                {error}
-                            </div>
-                        )}
-
-                        <form onSubmit={handleSubmit} className="space-y-3.5">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-foreground">Email</label>
-                                <div className="relative">
-                                    <Mail className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
-                                    <Input
-                                        type="email"
-                                        placeholder="admin@pos.com"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        className="pl-9 text-sm"
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-xs font-semibold text-foreground">Mật khẩu</label>
-                                </div>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-2.5 size-4 text-muted-foreground" />
-                                    <Input
-                                        type="password"
-                                        placeholder="••••••••"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        className="pl-9 text-sm"
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <Button
-                                type="submit"
-                                disabled={isLoading}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium cursor-pointer h-9 shadow-md shadow-blue-500/20 mt-2"
-                            >
-                                {isLoading ? "Đang xử lý..." : "Đăng nhập"}
-                                <ArrowRight className="size-4 ml-1.5" />
-                            </Button>
-                        </form>
+                        {/* Validated Login Form */}
+                        <LoginForm />
 
                         {/* Quick Demo Logins */}
                         <div className="pt-2 border-t border-border/60">
