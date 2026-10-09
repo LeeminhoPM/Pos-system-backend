@@ -9,6 +9,7 @@ import {
     Clock,
     XCircle,
     Calendar,
+    History,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { orderApi, refundApi } from "@/services/api";
@@ -17,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
+import PaymentHistoryModal from "@/components/payment/PaymentHistoryModal";
 
 export default function Orders() {
     const { branch, store, user } = useAuthStore();
@@ -29,6 +31,7 @@ export default function Orders() {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [isRefundOpen, setIsRefundOpen] = useState(false);
+    const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
     const [refundReason, setRefundReason] = useState("");
     const [refundAmount, setRefundAmount] = useState("");
     const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
@@ -105,6 +108,14 @@ export default function Orders() {
                         Theo dõi toàn bộ đơn hàng bán ra và xử lý hoàn tiền
                     </p>
                 </div>
+                <Button
+                    variant="outline"
+                    onClick={() => setIsPaymentHistoryOpen(true)}
+                    className="gap-2 cursor-pointer border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 font-semibold"
+                >
+                    <History className="size-4" />
+                    Lịch sử cổng thanh toán Stripe
+                </Button>
             </div>
 
             {/* Filter Bar */}
@@ -345,6 +356,12 @@ export default function Orders() {
                     </Button>
                 </form>
             </Modal>
+
+            {/* Payment Transactions History & Stripe Refund Modal */}
+            <PaymentHistoryModal
+                isOpen={isPaymentHistoryOpen}
+                onClose={() => setIsPaymentHistoryOpen(false)}
+            />
         </div>
     );
 }

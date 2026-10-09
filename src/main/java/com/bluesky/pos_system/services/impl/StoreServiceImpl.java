@@ -14,18 +14,21 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class StoreServiceImpl implements StoreService {
     StoreRepository storeRepository;
     UserService userService;
 
     @Override
+    @Transactional
     public StoreDTO createStore(StoreDTO storeDTO, User user) {
         Store store = StoreMapper.toEntity(storeDTO, user);
         return StoreMapper.toDTO(storeRepository.save(store));
@@ -52,6 +55,7 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
+    @Transactional
     public StoreDTO updateStore(StoreDTO storeDTO, UUID storeId) {
         User currentUser = userService.getCurrentUser();
         Store existingStore = storeRepository.findByStoreAdminId(currentUser.getId());
@@ -77,6 +81,7 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
+    @Transactional
     public void deleteStore(UUID storeId) {
         Store store = getStoreByAdmin();
         storeRepository.delete(store);
@@ -92,6 +97,7 @@ public class StoreServiceImpl implements StoreService {
     }
 
     @Override
+    @Transactional
     public StoreDTO moderateStore(UUID storeId, StoreStatus storeStatus) {
         Store store = storeRepository.findById(storeId).orElseThrow(() -> new RuntimeException("Không tìm thấy cửa hàng"));
         store.setStatus(storeStatus);

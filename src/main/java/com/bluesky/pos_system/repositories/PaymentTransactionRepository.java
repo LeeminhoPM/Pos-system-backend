@@ -3,7 +3,10 @@ package com.bluesky.pos_system.repositories;
 import com.bluesky.pos_system.domains.PaymentStatus;
 import com.bluesky.pos_system.domains.PaymentType;
 import com.bluesky.pos_system.models.PaymentTransaction;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -14,8 +17,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface PaymentTransactionRepository extends JpaRepository<PaymentTransaction, UUID> {
+public interface PaymentTransactionRepository extends JpaRepository<PaymentTransaction, UUID>, JpaSpecificationExecutor<PaymentTransaction> {
     List<PaymentTransaction> findByOrderId(UUID orderId);
+
+    List<PaymentTransaction> findByOrderIdOrderByCreatedAtDesc(UUID orderId);
+
+    Page<PaymentTransaction> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
     Optional<PaymentTransaction> findByTransactionCode(String transactionCode);
 

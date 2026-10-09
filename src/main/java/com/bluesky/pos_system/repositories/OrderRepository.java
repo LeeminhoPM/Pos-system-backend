@@ -20,7 +20,7 @@ import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, UUID> {
-    @EntityGraph(attributePaths = {"branch", "cashier", "customer"})
+    @EntityGraph(attributePaths = {"branch", "cashier", "customer", "items", "items.product"})
     Optional<Order> findWithDetailsById(UUID id);
 
     @EntityGraph(attributePaths = {"branch", "cashier", "customer"})

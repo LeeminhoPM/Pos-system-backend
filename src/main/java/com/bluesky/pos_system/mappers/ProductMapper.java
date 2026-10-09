@@ -5,10 +5,38 @@ import com.bluesky.pos_system.models.Product;
 import com.bluesky.pos_system.models.Store;
 import com.bluesky.pos_system.models.Supplier;
 import com.bluesky.pos_system.payload.dto.ProductDTO;
+import java.util.UUID;
 
 public class ProductMapper {
     public static ProductDTO toDTO(Product product) {
         if (product == null) return null;
+
+        com.bluesky.pos_system.payload.dto.SupplierDTO supplierDTO = null;
+        UUID supplierId = null;
+        try {
+            if (product.getSupplier() != null) {
+                supplierId = product.getSupplier().getId();
+                supplierDTO = SupplierMapper.toDTO(product.getSupplier());
+            }
+        } catch (Exception ignored) {}
+
+        com.bluesky.pos_system.payload.dto.StoreDTO storeDTO = null;
+        UUID storeId = null;
+        try {
+            if (product.getStore() != null) {
+                storeId = product.getStore().getId();
+                storeDTO = StoreMapper.toDTO(product.getStore());
+            }
+        } catch (Exception ignored) {}
+
+        com.bluesky.pos_system.payload.dto.CategoryDTO categoryDTO = null;
+        UUID categoryId = null;
+        try {
+            if (product.getCategory() != null) {
+                categoryId = product.getCategory().getId();
+                categoryDTO = CategoryMapper.toDTO(product.getCategory());
+            }
+        } catch (Exception ignored) {}
 
         return ProductDTO.builder()
                 .id(product.getId())
@@ -28,12 +56,12 @@ public class ProductMapper {
                 .isDeleted(product.getIsDeleted() != null ? product.getIsDeleted() : false)
                 .profitAmount(product.getProfitAmount())
                 .profitMargin(product.getProfitMargin())
-                .supplier(product.getSupplier() != null ? SupplierMapper.toDTO(product.getSupplier()) : null)
-                .supplierId(product.getSupplier() != null ? product.getSupplier().getId() : null)
-                .store(product.getStore() != null ? StoreMapper.toDTO(product.getStore()) : null)
-                .category(product.getCategory() != null ? CategoryMapper.toDTO(product.getCategory()) : null)
-                .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
-                .storeId(product.getStore() != null ? product.getStore().getId() : null)
+                .supplier(supplierDTO)
+                .supplierId(supplierId)
+                .store(storeDTO)
+                .category(categoryDTO)
+                .categoryId(categoryId)
+                .storeId(storeId)
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .build();

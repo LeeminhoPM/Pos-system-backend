@@ -17,15 +17,18 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CategoryServiceImpl implements CategoryService {
     CategoryRepository categoryRepository;
@@ -44,6 +47,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     @CacheEvict(value = {"categories", "categoryTrees"}, allEntries = true)
     public CategoryDTO createCategory(CategoryDTO categoryDTO) {
         User user = null;
@@ -92,17 +96,18 @@ public class CategoryServiceImpl implements CategoryService {
     @Cacheable(value = "categories", key = "#storeId")
     public List<CategoryDTO> getAllCategoriesByStore(UUID storeId) {
         List<Category> categories = categoryRepository.findByStoreId(storeId);
-        return categories.stream().map(CategoryMapper::toDTO).toList();
+        return categories.stream().map(CategoryMapper::toDTO).collect(Collectors.toList());
     }
 
     @Override
     @Cacheable(value = "categoryTrees", key = "#storeId")
     public List<CategoryDTO> getCategoryTreeByStore(UUID storeId) {
         List<Category> rootCategories = categoryRepository.findByStoreIdAndParentIsNull(storeId);
-        return rootCategories.stream().map(CategoryMapper::toDTO).toList();
+        return rootCategories.stream().map(CategoryMapper::toDTO).collect(Collectors.toList());
     }
 
     @Override
+    @Transactional
     @CacheEvict(value = {"categories", "categoryTrees"}, allEntries = true)
     public CategoryDTO updateCategory(UUID id, CategoryDTO categoryDTO) {
         Category category = categoryRepository.findById(id).orElseThrow(
@@ -129,6 +134,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     @CacheEvict(value = {"categories", "categoryTrees"}, allEntries = true)
     public void deleteCategory(UUID id) {
         Category category = categoryRepository.findById(id).orElseThrow(

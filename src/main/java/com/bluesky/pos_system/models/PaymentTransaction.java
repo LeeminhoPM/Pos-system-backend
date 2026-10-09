@@ -41,9 +41,32 @@ public class PaymentTransaction {
 
     String gatewayReference;
 
+    @Builder.Default
+    String currency = "vnd";
+
+    String chargeId;
+
+    String receiptUrl;
+
+    @Builder.Default
+    Double refundedAmount = 0.0;
+
+    String stripeRefundId;
+
+    String errorMessage;
+
+    String customerEmail;
+
+    String cardBrand;
+
+    String cardLast4;
+
     String notes;
 
     @CreationTimestamp
     @Column(updatable = false)
     LocalDateTime createdAt;
+
+    @org.hibernate.annotations.UpdateTimestamp
+    LocalDateTime updatedAt;
 }

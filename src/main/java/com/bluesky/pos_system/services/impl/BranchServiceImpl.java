@@ -13,12 +13,14 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class BranchServiceImpl implements BranchService {
     BranchRepository branchRepository;
@@ -26,6 +28,7 @@ public class BranchServiceImpl implements BranchService {
     UserService userService;
 
     @Override
+    @Transactional
     public BranchDTO createBranch(BranchDTO branchDTO) {
         User user = userService.getCurrentUser();
         Store store = storeRepository.findByStoreAdminId(user.getId());
@@ -34,6 +37,7 @@ public class BranchServiceImpl implements BranchService {
     }
 
     @Override
+    @Transactional
     public BranchDTO updateBranch(UUID id, BranchDTO branchDTO) {
         Branch branch = branchRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy"));
 
@@ -49,6 +53,7 @@ public class BranchServiceImpl implements BranchService {
     }
 
     @Override
+    @Transactional
     public void deleteBranch(UUID id) {
         Branch branch = branchRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy"));
         branchRepository.delete(branch);

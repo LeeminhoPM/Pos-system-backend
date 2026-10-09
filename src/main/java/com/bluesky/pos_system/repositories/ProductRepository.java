@@ -19,6 +19,8 @@ import org.springframework.data.jpa.repository.EntityGraph;
 public interface ProductRepository extends JpaRepository<Product, UUID> {
     List<Product> findByStoreId(UUID storeId);
 
+    boolean existsBySku(String sku);
+
     @EntityGraph(attributePaths = {"category", "supplier", "store"})
     List<Product> findByStoreIdAndIsDeletedFalse(UUID storeId);
 

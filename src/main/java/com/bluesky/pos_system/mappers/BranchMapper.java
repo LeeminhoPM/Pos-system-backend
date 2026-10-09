@@ -6,6 +6,14 @@ import com.bluesky.pos_system.payload.dto.BranchDTO;
 
 public class BranchMapper {
     public static BranchDTO toDTO (Branch branch) {
+        java.util.List<String> days = null;
+        try {
+            if (branch.getWorkingDays() != null && org.hibernate.Hibernate.isInitialized(branch.getWorkingDays())) {
+                days = new java.util.ArrayList<>(branch.getWorkingDays());
+            }
+        } catch (Exception ignored) {
+        }
+
         return BranchDTO.builder()
                 .id(branch.getId())
                 .name(branch.getName())
@@ -14,7 +22,7 @@ public class BranchMapper {
                 .email(branch.getEmail())
                 .openTime(branch.getOpenTime())
                 .closeTime(branch.getCloseTime())
-                .workingDays(branch.getWorkingDays())
+                .workingDays(days)
                 .storeId(branch.getStore() != null ? branch.getStore().getId() : null)
                 .createdAt(branch.getCreatedAt())
                 .updatedAt(branch.getUpdatedAt())

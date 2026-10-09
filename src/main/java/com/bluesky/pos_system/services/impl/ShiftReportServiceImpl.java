@@ -15,6 +15,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ShiftReportServiceImpl implements ShiftReportService {
     ShiftReportRepository shiftReportRepository;
@@ -31,6 +33,7 @@ public class ShiftReportServiceImpl implements ShiftReportService {
     UserService userService;
 
     @Override
+    @Transactional
     public ShiftReportDTO startShift() {
         User cashier = userService.getCurrentUser();
         LocalDateTime shiftStart = LocalDateTime.now();
@@ -55,6 +58,7 @@ public class ShiftReportServiceImpl implements ShiftReportService {
     }
 
     @Override
+    @Transactional
     public ShiftReportDTO endShift(LocalDateTime shiftEnd) {
         User cashier = userService.getCurrentUser();
         ShiftReport shiftReport = shiftReportRepository.findTopByCashierAndShiftEndIsNullOrderByShiftStartDesc(cashier).orElseThrow(
@@ -102,9 +106,11 @@ public class ShiftReportServiceImpl implements ShiftReportService {
     @Override
     public ShiftReportDTO getCurrentShiftReport() {
         User cashier = userService.getCurrentUser();
-        ShiftReport shiftReport = shiftReportRepository.findTopByCashierAndShiftEndIsNullOrderByShiftStartDesc(cashier).orElseThrow(
-                () -> new EntityNotFoundException("Không có ca làm việc nào đang mở")
-        );
+        Optional<ShiftReport> shiftReportOpt = shiftReportRepository.findTopByCashierAndShiftEndIsNullOrderByShiftStartDesc(cashier);
+        if (shiftReportOpt.isEmpty()) {
+            return null;
+        }
+        ShiftReport shiftReport = shiftReportOpt.get();
         LocalDateTime now = LocalDateTime.now();
 
         List<Refund> refunds = refundRepository.findByCashierIdAndCreatedAtBetween(

@@ -2,7 +2,9 @@ package com.bluesky.pos_system.domains;
 
 public enum PaymentStatus {
     PENDING,
+    PROCESSING,
     SUCCESS,
     FAILED,
-    REFUNDED
+    REFUNDED,
+    PARTIALLY_REFUNDED
 }

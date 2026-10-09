@@ -12,8 +12,11 @@ public class CategoryMapper {
         if (category == null) return null;
 
         List<CategoryDTO> subDTOs = null;
-        if (category.getSubCategories() != null && !category.getSubCategories().isEmpty()) {
-            subDTOs = category.getSubCategories().stream().map(CategoryMapper::toDTO).toList();
+        try {
+            if (category.getSubCategories() != null && org.hibernate.Hibernate.isInitialized(category.getSubCategories()) && !category.getSubCategories().isEmpty()) {
+                subDTOs = category.getSubCategories().stream().map(CategoryMapper::toDTO).collect(java.util.stream.Collectors.toList());
+            }
+        } catch (Exception ignored) {
         }
 
         return CategoryDTO.builder()

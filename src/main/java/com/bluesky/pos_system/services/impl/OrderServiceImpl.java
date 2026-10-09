@@ -25,6 +25,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class OrderServiceImpl implements OrderService {
     OrderRepository orderRepository;
@@ -164,6 +165,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
     public OrderDTO updateOrderStatus(UUID id, OrderStatus status) {
         Order order = orderRepository.findById(id).orElseThrow(
                 () -> new EntityNotFoundException("Không tìm thấy đơn hàng")

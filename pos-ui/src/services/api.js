@@ -147,4 +147,16 @@ export const auditLogApi = {
     getLogs: (page = 0, size = 20) => api.get(`/api/audit-logs?page=${page}&size=${size}`),
 };
 
+export const paymentApi = {
+    getConfig: () => api.get("/api/v1/payments/config"),
+    initiate: (data) => api.post("/api/v1/payments/initiate", data),
+    getStatus: (id) => api.get(`/api/v1/payments/${id}`),
+    getByOrder: (orderId) => api.get(`/api/v1/payments/order/${orderId}`),
+    getHistory: (params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        return api.get(`/api/v1/payments/history${query ? `?${query}` : ""}`);
+    },
+    refund: (data) => api.post("/api/v1/payments/refund", data),
+};
+
 export default api;

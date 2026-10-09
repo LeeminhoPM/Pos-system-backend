@@ -16,6 +16,7 @@ import {
     X,
     Sparkles,
     ShoppingCart,
+    History,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
@@ -25,6 +26,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/dialog";
+import StripePaymentModal from "@/components/payment/StripePaymentModal";
+import PaymentHistoryModal from "@/components/payment/PaymentHistoryModal";
 
 export default function POS() {
     const { branch, store, user } = useAuthStore();
@@ -64,6 +67,9 @@ export default function POS() {
     const [isReceiptOpen, setIsReceiptOpen] = useState(false);
     const [isNewCustomerOpen, setIsNewCustomerOpen] = useState(false);
     const [completedOrder, setCompletedOrder] = useState(null);
+    const [isStripeModalOpen, setIsStripeModalOpen] = useState(false);
+    const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
+    const [pendingOrderForStripe, setPendingOrderForStripe] = useState(null);
 
     // Payment states
     const [paymentMethod, setPaymentMethod] = useState("CASH");
@@ -191,6 +197,14 @@ export default function POS() {
             };
 
             const createdOrder = await orderApi.create(orderPayload);
+
+            if (paymentMethod === "STRIPE") {
+                setPendingOrderForStripe(createdOrder);
+                setIsCheckoutOpen(false);
+                setIsStripeModalOpen(true);
+                return;
+            }
+
             setCompletedOrder(createdOrder);
             clearCart();
             setIsCheckoutOpen(false);
@@ -210,6 +224,23 @@ export default function POS() {
             alert(msg);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    // Callback when Stripe card checkout succeeds
+    const handleStripePaymentSuccess = async (paymentResult) => {
+        setIsStripeModalOpen(false);
+        setCompletedOrder(pendingOrderForStripe);
+        clearCart();
+        setIsReceiptOpen(true);
+
+        if (branch?.id) {
+            const invs = await inventoryApi.getByBranch(branch.id).catch(() => []);
+            const invMapping = {};
+            (invs || []).forEach((inv) => {
+                if (inv.productId) invMapping[inv.productId] = inv.quantity;
+            });
+            setInventoryMap(invMapping);
         }
     };
 
@@ -246,6 +277,14 @@ export default function POS() {
                             className="pl-9 h-10 text-sm bg-background"
                         />
                     </div>
+                    <Button
+                        variant="outline"
+                        onClick={() => setIsPaymentHistoryOpen(true)}
+                        className="h-10 text-xs gap-1.5 cursor-pointer border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 shrink-0 font-semibold"
+                    >
+                        <History className="size-4" />
+                        Lịch sử TT
+                    </Button>
                 </div>
 
                 {/* Category Filter Tabs */}
@@ -539,7 +578,7 @@ export default function POS() {
                         <label className="text-xs font-semibold text-foreground mb-2 block">
                             Phương thức thanh toán
                         </label>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             <button
                                 type="button"
                                 onClick={() => setPaymentMethod("CASH")}
@@ -576,8 +615,33 @@ export default function POS() {
                                 <QrCode className="size-5" />
                                 Chuyển khoản QR
                             </button>
+                            <button
+                                type="button"
+                                onClick={() => setPaymentMethod("STRIPE")}
+                                className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                                    paymentMethod === "STRIPE"
+                                        ? "border-blue-600 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 shadow-2xs ring-1 ring-blue-500"
+                                        : "border-border hover:bg-muted text-muted-foreground"
+                                }`}
+                            >
+                                <CreditCard className="size-5 text-indigo-500" />
+                                Thẻ Stripe
+                            </button>
                         </div>
                     </div>
+
+                    {/* Stripe Info Notice */}
+                    {paymentMethod === "STRIPE" && (
+                        <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/40 space-y-1.5 text-xs text-blue-950 dark:text-blue-200">
+                            <div className="flex items-center gap-2 font-semibold text-blue-600 dark:text-blue-400">
+                                <CreditCard className="size-4" />
+                                Cổng thanh toán Stripe Elements
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                                Nhấn xác nhận để mở giao dịch thẻ Stripe bảo mật (hỗ trợ Visa, Mastercard, JCB hoặc chế độ mô phỏng Sandbox Test Mode).
+                            </p>
+                        </div>
+                    )}
 
                     {/* Cash Calculation */}
                     {paymentMethod === "CASH" && (
@@ -634,7 +698,11 @@ export default function POS() {
                         disabled={isSubmitting || (paymentMethod === "CASH" && tendered < total)}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 cursor-pointer shadow-md shadow-blue-500/20"
                     >
-                        {isSubmitting ? "Đang xử lý..." : "Hoàn Tất Đơn & In Hóa Đơn"}
+                        {isSubmitting
+                            ? "Đang xử lý..."
+                            : paymentMethod === "STRIPE"
+                            ? "Tiến Hành Thanh Toán Thẻ Stripe"
+                            : "Hoàn Tất Đơn & In Hóa Đơn"}
                     </Button>
                 </div>
             </Modal>
@@ -782,6 +850,22 @@ export default function POS() {
                     </Button>
                 </form>
             </Modal>
+
+            {/* Stripe Online Card Checkout Modal */}
+            <StripePaymentModal
+                isOpen={isStripeModalOpen}
+                onClose={() => setIsStripeModalOpen(false)}
+                order={pendingOrderForStripe}
+                amount={pendingOrderForStripe?.totalAmount || total}
+                customer={customer}
+                onSuccess={handleStripePaymentSuccess}
+            />
+
+            {/* Payment Transactions History & Refund Modal */}
+            <PaymentHistoryModal
+                isOpen={isPaymentHistoryOpen}
+                onClose={() => setIsPaymentHistoryOpen(false)}
+            />
         </div>
     );
 }

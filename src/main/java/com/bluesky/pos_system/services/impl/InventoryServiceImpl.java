@@ -35,6 +35,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class InventoryServiceImpl implements InventoryService {
     InventoryRepository inventoryRepository;

@@ -10,7 +10,6 @@ public class StoreMapper {
         return StoreDTO.builder()
                 .id(store.getId())
                 .branch(store.getBranch())
-                .storeAdmin(UserMapper.toDTO(store.getStoreAdmin()))
                 .createdAt(store.getCreatedAt())
                 .updatedAt(store.getUpdatedAt())
                 .description(store.getDescription())
