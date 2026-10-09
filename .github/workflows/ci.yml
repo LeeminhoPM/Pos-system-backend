@@ -37,6 +37,9 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Run Checkstyle Code Quality Check
+        run: mvn checkstyle:check
+
       - name: Run Backend Unit & Integration Tests with JaCoCo
         env:
           DB_URL: jdbc:mysql://127.0.0.1:3306/pos_system_test?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -63,7 +66,7 @@ jobs:
           retention-days: 14
 
   frontend-build:
-    name: Frontend Build & Verification
+    name: Frontend Lint & Build Verification
     runs-on: ubuntu-latest
 
     steps:
@@ -80,6 +83,10 @@ jobs:
       - name: Install Frontend Dependencies
         working-directory: ./pos-ui
         run: npm ci
+
+      - name: Run Frontend Lint
+        working-directory: ./pos-ui
+        run: npm run lint
 
       - name: Build Frontend Application
         working-directory: ./pos-ui

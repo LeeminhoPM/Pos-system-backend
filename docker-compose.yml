@@ -65,12 +65,32 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-zntuceyczbzgazycopqqwvryithxbewcymywpyqcehlpgxzwowgmqsmizmvremjncvqxqrnjwoidanptqzxomilyhmeeclqobxjipuxzegyfrqxevrekglqkjgnhgnsmhaqofiycmqqgrpcnznebbyvajqclvqzw}
-      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000,http://localhost,http://localhost:80
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_DEFAULT_CURRENCY: ${STRIPE_DEFAULT_CURRENCY:-vnd}
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - skypos-network
+
+  # ========================================================
+  # React POS UI Frontend (Nginx Production)
+  # ========================================================
+  pos-frontend:
+    build:
+      context: ./pos-ui
+      dockerfile: Dockerfile
+    container_name: skypos-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - pos-backend
     networks:
       - skypos-network
 
