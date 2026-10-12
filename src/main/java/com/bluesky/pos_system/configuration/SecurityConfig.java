@@ -22,7 +22,7 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
-    @Value("${pos.cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
+    @Value("${pos.cors.allowed-origins:http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,http://localhost:*,http://127.0.0.1:*}")
     private String allowedOrigins;
 
     @Bean
@@ -68,7 +68,7 @@ public class SecurityConfig {
                 .filter(s -> !s.isEmpty())
                 .toList();
 
-        corsConfiguration.setAllowedOrigins(origins);
+        corsConfiguration.setAllowedOriginPatterns(origins);
         corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         corsConfiguration.setAllowCredentials(true);
         corsConfiguration.setAllowedHeaders(List.of("*"));
