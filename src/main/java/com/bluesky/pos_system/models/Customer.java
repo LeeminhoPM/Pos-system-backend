@@ -35,6 +35,14 @@ public class Customer {
 
     String address;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    com.bluesky.pos_system.domains.CustomerTier tier;
+
+    java.time.LocalDate dateOfBirth;
+
+    String gender;
+
     Integer loyaltyPoints;
 
     Double totalSpent;
@@ -55,6 +63,9 @@ public class Customer {
         }
         if (totalSpent == null) {
             totalSpent = 0.0;
+        }
+        if (tier == null) {
+            tier = com.bluesky.pos_system.domains.CustomerTier.BRONZE;
         }
         if (isDeleted == null) {
             isDeleted = false;

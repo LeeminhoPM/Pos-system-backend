@@ -13,6 +13,8 @@ import {
     LogOut,
     Store,
     Sparkles,
+    Truck,
+    CalendarCheck,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Badge } from "@/components/ui/badge";
@@ -23,8 +25,11 @@ const navigationItems = [
     { name: "Sản phẩm", path: "/products", icon: Package },
     { name: "Tồn kho", path: "/inventory", icon: Warehouse },
     { name: "Đơn hàng", path: "/orders", icon: ReceiptText },
-    { name: "Khách hàng", path: "/customers", icon: Users },
+    { name: "Giao hàng (Online)", path: "/deliveries", icon: Truck },
+    { name: "Khách hàng (CRM)", path: "/customers", icon: Users },
+    { name: "Chấm công", path: "/attendance", icon: CalendarCheck },
     { name: "Báo cáo ca", path: "/shifts", icon: Clock },
+    { name: "Web Shop (Menu)", path: "/shop", icon: Store },
     { name: "Nhân viên", path: "/employees", icon: UserCog, adminOnly: true },
     { name: "Cài đặt", path: "/settings", icon: Settings },
 ];

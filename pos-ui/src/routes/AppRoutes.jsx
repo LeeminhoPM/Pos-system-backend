@@ -17,15 +17,20 @@ const Customers = lazy(() => import("@/pages/Customers/Customers"));
 const ShiftReportPage = lazy(() => import("@/pages/ShiftReport/ShiftReportPage"));
 const Employees = lazy(() => import("@/pages/Employees/Employees"));
 const Settings = lazy(() => import("@/pages/Settings/Settings"));
+const WebShopPage = lazy(() => import("@/pages/WebShop/WebShopPage"));
+const AttendancePage = lazy(() => import("@/pages/Attendance/AttendancePage"));
+const DeliveriesPage = lazy(() => import("@/pages/Deliveries/DeliveriesPage"));
 
 export function AppRoutes() {
     return (
         <ErrorBoundary>
             <Suspense fallback={<PageLoader text="Đang khởi tạo ứng dụng POS..." />}>
                 <Routes>
-                    {/* Public Auth Routes */}
+                    {/* Public Auth & Shop Routes */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/shop" element={<WebShopPage />} />
+                    <Route path="/catalog" element={<WebShopPage />} />
 
                     {/* Protected POS & Admin Routes */}
                     <Route element={<ProtectedRoute />}>
@@ -35,8 +40,10 @@ export function AppRoutes() {
                             <Route path="/products" element={<Products />} />
                             <Route path="/inventory" element={<Inventory />} />
                             <Route path="/orders" element={<Orders />} />
+                            <Route path="/deliveries" element={<DeliveriesPage />} />
                             <Route path="/customers" element={<Customers />} />
                             <Route path="/shifts" element={<ShiftReportPage />} />
+                            <Route path="/attendance" element={<AttendancePage />} />
                             <Route path="/settings" element={<Settings />} />
 
                             {/* Store Admin & Admin Restricted Routes */}

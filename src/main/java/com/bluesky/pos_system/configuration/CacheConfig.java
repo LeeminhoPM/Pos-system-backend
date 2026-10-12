@@ -27,6 +27,8 @@ public class CacheConfig {
     public static final String CACHE_PRODUCTS = "products";
     public static final String CACHE_STORES = "stores";
     public static final String CACHE_PROMOTIONS = "promotions";
+    public static final String CACHE_PUBLIC_CATALOG = "publicCatalog";
+    public static final String CACHE_PUBLIC_CATEGORIES = "publicCategories";
 
     @Bean
     @Primary
@@ -53,6 +55,8 @@ public class CacheConfig {
         cacheConfigs.put(CACHE_PRODUCTS, defaultConfig.entryTtl(Duration.ofMinutes(15)));
         cacheConfigs.put(CACHE_STORES, defaultConfig.entryTtl(Duration.ofHours(4)));
         cacheConfigs.put(CACHE_PROMOTIONS, defaultConfig.entryTtl(Duration.ofMinutes(30)));
+        cacheConfigs.put(CACHE_PUBLIC_CATALOG, defaultConfig.entryTtl(Duration.ofMinutes(10)));
+        cacheConfigs.put(CACHE_PUBLIC_CATEGORIES, defaultConfig.entryTtl(Duration.ofHours(1)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
@@ -64,7 +68,8 @@ public class CacheConfig {
     @Profile("test")
     public CacheManager testCacheManager() {
         return new ConcurrentMapCacheManager(
-                CACHE_CATEGORIES, CACHE_CATEGORY_TREES, CACHE_PRODUCTS, CACHE_STORES, CACHE_PROMOTIONS
+                CACHE_CATEGORIES, CACHE_CATEGORY_TREES, CACHE_PRODUCTS, CACHE_STORES, CACHE_PROMOTIONS,
+                CACHE_PUBLIC_CATALOG, CACHE_PUBLIC_CATEGORIES
         );
     }
 }

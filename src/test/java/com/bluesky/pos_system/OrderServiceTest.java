@@ -48,6 +48,9 @@ class OrderServiceTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private com.bluesky.pos_system.services.LoyaltyService loyaltyService;
+
     @InjectMocks
     private OrderServiceImpl orderService;
 
@@ -107,6 +110,10 @@ class OrderServiceTest {
             o.setId(UUID.randomUUID());
             return o;
         });
+        when(loyaltyService.earnPoints(any(), any(), anyDouble())).thenAnswer(inv -> {
+            customer.setLoyaltyPoints(customer.getLoyaltyPoints() + 9);
+            return null;
+        });
 
         OrderDTO result = orderService.createOrder(orderRequest);
 
@@ -126,6 +133,7 @@ class OrderServiceTest {
         assertEquals(19, customer.getLoyaltyPoints());
         assertEquals(598000.0, customer.getTotalSpent());
         verify(customerRepository, times(1)).save(customer);
+        verify(loyaltyService, times(1)).earnPoints(eq(customer), any(), eq(98000.0));
     }
 
     @Test

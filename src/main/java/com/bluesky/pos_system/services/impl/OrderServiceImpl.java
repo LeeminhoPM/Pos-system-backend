@@ -35,6 +35,7 @@ public class OrderServiceImpl implements OrderService {
     InventoryTransactionRepository inventoryTransactionRepository;
     BranchRepository branchRepository;
     UserService userService;
+    com.bluesky.pos_system.services.LoyaltyService loyaltyService;
 
     @Override
     @Transactional
@@ -134,15 +135,19 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalAmount(total);
         order.setItems(orderItems);
 
-        // Update customer totalSpent & loyaltyPoints
+        Order savedOrder = orderRepository.save(order);
+
+        // Update customer totalSpent & loyaltyPoints via enterprise LoyaltyService
         if (customer != null) {
             customer.setTotalSpent((customer.getTotalSpent() != null ? customer.getTotalSpent() : 0.0) + total);
-            int earnedPoints = (int) (total / 10000.0);
-            customer.setLoyaltyPoints((customer.getLoyaltyPoints() != null ? customer.getLoyaltyPoints() : 0) + earnedPoints);
             customerRepository.save(customer);
+            try {
+                loyaltyService.earnPoints(customer, savedOrder, total);
+            } catch (Exception e) {
+                log.warn("Error earning loyalty points for order {}: {}", savedOrder.getOrderNumber(), e.getMessage());
+            }
         }
 
-        Order savedOrder = orderRepository.save(order);
         log.info("Order created successfully: orderNumber={}, branchId={}, totalAmount={}, itemsCount={}",
                 savedOrder.getOrderNumber(), finalBranch.getId(), savedOrder.getTotalAmount(), orderItems.size());
         return OrderMapper.toDTO(savedOrder);

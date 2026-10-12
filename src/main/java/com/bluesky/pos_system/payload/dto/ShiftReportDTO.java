@@ -26,6 +26,14 @@ public class ShiftReportDTO {
 
     Double netSale;
 
+    Double openingCash;
+
+    Double actualCashAmount;
+
+    Double cashDiscrepancy;
+
+    String notes;
+
     int totalOrders;
 
     UUID cashierId;

@@ -29,11 +29,12 @@
 ## 1. Tính Năng Nổi Bật
 
 - 🛒 **Giao diện POS bán hàng siêu tốc**: Tìm kiếm nhanh mã vạch Barcode/SKU, chọn chiết khấu, áp dụng voucher khuyến mãi, quét thẻ và in hóa đơn.
-- 💳 **Cổng thanh toán quốc tế Stripe**: Hỗ trợ thẻ tín dụng/ghi nợ quốc tế (Visa, Mastercard), tự động đồng bộ Webhook, giả lập Sandbox và hoàn tiền (Refunds) an toàn.
-- 🏢 **Kiến trúc Đa chi nhánh & Cửa hàng (Multi-Store & Multi-Branch)**: Mỗi tài khoản được phân quyền chặt chẽ theo chi nhánh và cửa hàng.
-- 📦 **Quản lý kho thời gian thực (Real-time Inventory Audit)**: Cảnh báo hàng sắp hết (Low-stock warning), sổ cái nhật ký xuất/nhập/điều chỉnh kho (`InventoryTransaction`).
-- 🕒 **Quản lý ca làm việc thu ngân (Shift Reports)**: Khai báo tiền đầu ca, theo dõi doanh thu tiền mặt / thẻ trong ca, chốt ca và xuất báo cáo bàn giao.
-- ⚡ **Tối ưu hóa hiệu năng & Cache**: Sử dụng **Redis Cache** cho danh mục sản phẩm, cấu hình JPA `@EntityGraph` chống triệt để lỗi N+1 Query và `LazyInitializationException`.
+- 💳 **Cổng thanh toán đa kênh (Stripe, VietQR, MoMo, ZaloPay)**: Hỗ trợ thẻ quốc tế Stripe, sinh mã **VietQR động chuẩn NAPAS 247**, ví điện tử MoMo và ZaloPay, Webhook xác nhận tự động.
+- 🎁 **Loyalty Program & CRM Khách Hàng**: Tích điểm thưởng tự động theo hạng thành viên (`BRONZE`, `SILVER`, `GOLD`, `DIAMOND`), quy đổi điểm giảm trực tiếp hóa đơn POS (1 điểm = 1,000 VND), sổ cái biến động điểm minh bạch.
+- 🛍️ **Web Shop Công Khai & Quản Lý Giao Hàng (Omnichannel)**: Menu sản phẩm trực tuyến có **Redis L2 Cache**, khách hàng tự đặt hàng, cấp mã vận đơn (`trackingNumber`) và phân luồng trạng thái giao vận (`PENDING` -> `CONFIRMED` -> `SHIPPING` -> `DELIVERED`).
+- 👷 **Chấm Công & Quản Lý Nhân Sự (Workforce Management)**: Check-in, check-out tính giờ công tự động, kiểm soát đi muộn về sớm, thống kê công nhật theo chi nhánh.
+- 🕒 **Quản lý ca thu ngân & Đối soát tiền mặt (Shift Reconciliation)**: Khai báo tiền đầu ca, theo dõi doanh thu tiền mặt / thẻ trong ca, đối soát chênh lệch tiền mặt thực tế vs hệ thống (`cashDiscrepancy`).
+- ⚡ **Tối ưu hóa hiệu năng & DB Aggregations**: Query thống kê doanh thu trực tiếp bằng SQL Grouping (`sumTotalRevenue`, `findDailySalesAggregated`), ThreadPoolTaskExecutor xử lý bất đồng bộ `@Async`.
 - 🔐 **Bảo mật chuẩn Enterprise**: Spring Security 6 stateless với JWT Token (HMAC-SHA512), mã hóa mật khẩu BCrypt, phòng chống tấn công CSRF/XSS, phân quyền RBAC (`ADMIN`, `STORE_MANAGER`, `CASHIER`).
 
 ---
@@ -229,12 +230,30 @@ API Base URL: `http://localhost:5000/api` (hoặc `/api/v1`)
 | **Đơn hàng** | `POST` | `/api/orders` | `CASHIER`, `ADMIN` | Tạo đơn hàng POS mới |
 | | `GET` | `/api/orders/branch/{branchId}` | Authenticated | Danh sách đơn hàng theo chi nhánh |
 | | `GET` | `/api/orders/{id}` | Authenticated | Chi tiết hóa đơn (kèm danh sách món) |
-| **Thanh toán** | `POST` | `/api/payments/stripe/create-intent` | Authenticated | Khởi tạo PaymentIntent với Stripe |
-| | `POST` | `/api/payments/stripe/refund` | `ADMIN`, `MANAGER` | Hoàn tiền giao dịch Stripe |
-| | `GET` | `/api/payments/transactions/order/{orderId}` | Authenticated | Lịch sử giao dịch thanh toán của đơn |
+| **Thanh toán Stripe** | `POST` | `/api/v1/payments/initiate` | Authenticated | Khởi tạo phiên thanh toán Stripe Elements |
+| | `POST` | `/api/v1/payments/refund` | `ADMIN`, `MANAGER` | Hoàn tiền giao dịch Stripe |
+| | `GET` | `/api/v1/payments/history` | Authenticated | Lịch sử giao dịch thanh toán phân trang |
+| **Thanh toán Việt Nam** | `POST` | `/api/v1/payments/vietnam/vietqr` | Authenticated | Khởi tạo mã QR chuyển khoản VietQR NAPAS 247 |
+| | `POST` | `/api/v1/payments/vietnam/ewallet` | Authenticated | Khởi tạo thanh toán ví điện tử MoMo / ZaloPay |
+| | `POST` | `/api/v1/payments/vietnam/confirm` | Authenticated | Xác nhận thu ngân đã nhận tiền chuyển khoản |
+| | `POST` | `/api/v1/payments/vietnam/webhook/{gateway}` | Public | Webhook IPN lắng nghe kết quả thanh toán |
+| **Loyalty & CRM** | `POST` | `/api/v1/loyalty/redeem` | Authenticated | Quy đổi điểm thưởng giảm giá hóa đơn POS |
+| | `GET` | `/api/v1/loyalty/customer/{id}/crm` | Authenticated | Hồ sơ CRM 360 độ (Tier, tổng chi, AOV) |
+| | `GET` | `/api/v1/loyalty/customer/{id}/history` | Authenticated | Sổ cái lịch sử tích và đổi điểm thưởng |
+| | `GET` | `/api/v1/loyalty/segments` | Authenticated | Báo cáo phân khúc khách hàng (BRONZE -> DIAMOND) |
+| **Web Shop Công Khai** | `GET` | `/api/v1/public/catalog` | Public | Xem menu/catalog sản phẩm (Redis Cached) |
+| | `POST` | `/api/v1/public/orders/checkout` | Public | Khách đặt đơn trực tuyến giao tận nơi |
+| | `GET` | `/api/v1/public/delivery/track/{tracking}` | Public | Tra cứu hành trình vận chuyển bằng mã vận đơn |
+| **Giao hàng** | `GET` | `/api/v1/deliveries/branch/{branchId}` | Authenticated | Danh sách đơn giao hàng theo chi nhánh |
+| | `PATCH` | `/api/v1/deliveries/{id}/status` | Authenticated | Cập nhật trạng thái vận chuyển |
+| **Chấm công** | `POST` | `/api/v1/attendance/check-in` | Authenticated | Nhân viên chấm công vào ca |
+| | `POST` | `/api/v1/attendance/check-out` | Authenticated | Nhân viên chấm công tan ca (tính giờ làm) |
+| | `GET` | `/api/v1/attendance/branch/{branchId}` | `ADMIN`, `MANAGER` | Bảng chấm công chi nhánh theo khoảng ngày |
 | **Ca thu ngân** | `GET` | `/api/shift-reports/current` | Authenticated | Ca làm việc hiện tại của thu ngân |
-| | `POST` | `/api/shift-reports/start` | `CASHIER` | Mở ca làm việc mới |
-| | `POST` | `/api/shift-reports/close` | `CASHIER` | Kết thúc ca làm việc và chốt tiền |
+| | `POST` | `/api/shift-reports/start` | `CASHIER` | Mở ca làm việc mới (kèm tiền đầu ca) |
+| | `PATCH` | `/api/shift-reports/end` | `CASHIER` | Chốt ca và kiểm kê đối soát tiền mặt |
+| **Báo cáo Analytics** | `GET` | `/api/v1/analytics/dashboard` | Authenticated | Dashboard tổng quan doanh thu POS |
+| | `GET` | `/api/v1/analytics/period` | Authenticated | Thống kê doanh thu theo khoảng ngày tùy chọn |
 
 ---
 

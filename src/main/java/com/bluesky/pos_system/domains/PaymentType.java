@@ -1,5 +1,5 @@
 package com.bluesky.pos_system.domains;
 
 public enum PaymentType {
-    CASH, UPI, CARD, STRIPE, QR_CODE
+    CASH, UPI, CARD, STRIPE, QR_CODE, MOMO, ZALOPAY, BANK_TRANSFER
 }

@@ -141,6 +141,58 @@ export const analyticsApi = {
         const query = new URLSearchParams(params).toString();
         return api.get(`/api/analytics/dashboard${query ? `?${query}` : ""}`);
     },
+    getPeriod: (params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        return api.get(`/api/v1/analytics/period${query ? `?${query}` : ""}`);
+    },
+};
+
+export const loyaltyApi = {
+    redeem: (data) => api.post("/api/v1/loyalty/redeem", data),
+    getHistory: (customerId, page = 0, size = 15) =>
+        api.get(`/api/v1/loyalty/customer/${customerId}/history?page=${page}&size=${size}`),
+    getCRMDetail: (customerId) => api.get(`/api/v1/loyalty/customer/${customerId}/crm`),
+    getSegments: () => api.get("/api/v1/loyalty/segments"),
+};
+
+export const vietnamPaymentApi = {
+    createVietQR: (data) => api.post("/api/v1/payments/vietnam/vietqr", data),
+    createEWallet: (data) => api.post("/api/v1/payments/vietnam/ewallet", data),
+    confirm: (data) => api.post("/api/v1/payments/vietnam/confirm", data),
+    getStatus: (txnId) => api.get(`/api/v1/payments/vietnam/status/${txnId}`),
+};
+
+export const publicCatalogApi = {
+    getCatalog: (params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        return api.get(`/api/v1/public/catalog${query ? `?${query}` : ""}`);
+    },
+    getCategories: (storeId) => api.get(`/api/v1/public/categories${storeId ? `?storeId=${storeId}` : ""}`),
+    checkout: (data) => api.post("/api/v1/public/orders/checkout", data),
+    trackDelivery: (trackingNo) => api.get(`/api/v1/public/delivery/track/${trackingNo}`),
+};
+
+export const deliveryApi = {
+    getByBranch: (branchId, params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        return api.get(`/api/v1/deliveries/branch/${branchId}${query ? `?${query}` : ""}`);
+    },
+    getById: (id) => api.get(`/api/v1/deliveries/${id}`),
+    updateStatus: (id, data) => api.patch(`/api/v1/deliveries/${id}/status`, data),
+};
+
+export const attendanceApi = {
+    checkIn: (branchId, notes = "") =>
+        api.post(`/api/v1/attendance/check-in?${branchId ? `branchId=${branchId}&` : ""}notes=${encodeURIComponent(notes)}`),
+    checkOut: (notes = "") =>
+        api.post(`/api/v1/attendance/check-out?notes=${encodeURIComponent(notes)}`),
+    getToday: () => api.get("/api/v1/attendance/today"),
+    getMyHistory: (page = 0, size = 15) =>
+        api.get(`/api/v1/attendance/my-history?page=${page}&size=${size}`),
+    getBranchAttendance: (branchId, params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        return api.get(`/api/v1/attendance/branch/${branchId}${query ? `?${query}` : ""}`);
+    },
 };
 
 export const auditLogApi = {

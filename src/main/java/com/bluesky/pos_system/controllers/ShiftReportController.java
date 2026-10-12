@@ -22,16 +22,20 @@ public class ShiftReportController {
     ShiftReportService shiftReportService;
 
     @PostMapping("/start")
-    public ResponseEntity<ShiftReportDTO> startShiftReport() {
-        ShiftReportDTO response = shiftReportService.startShift();
+    public ResponseEntity<ShiftReportDTO> startShiftReport(
+            @RequestParam(required = false, defaultValue = "0.0") Double openingCash
+    ) {
+        ShiftReportDTO response = shiftReportService.startShift(openingCash);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PatchMapping("/end")
     public ResponseEntity<ShiftReportDTO> endShiftReport(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(required = false) Double actualCashAmount,
+            @RequestParam(required = false) String notes
     ) {
-        ShiftReportDTO response = shiftReportService.endShift(endDate);
+        ShiftReportDTO response = shiftReportService.endShift(endDate, actualCashAmount, notes);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 

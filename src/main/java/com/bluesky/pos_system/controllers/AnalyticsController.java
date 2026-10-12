@@ -29,4 +29,15 @@ public class AnalyticsController {
         DashboardAnalyticsDTO response = analyticsService.getDashboardAnalytics(branchId, storeId);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/period")
+    @Operation(summary = "Thống kê doanh thu và báo cáo theo khoảng thời gian (ngày/tuần/tháng)")
+    public ResponseEntity<com.bluesky.pos_system.payload.dto.AnalyticsPeriodReportDTO> getPeriodAnalytics(
+            @RequestParam(required = false) UUID branchId,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate
+    ) {
+        com.bluesky.pos_system.payload.dto.AnalyticsPeriodReportDTO response = analyticsService.getPeriodAnalytics(branchId, startDate, endDate);
+        return ResponseEntity.ok(response);
+    }
 }

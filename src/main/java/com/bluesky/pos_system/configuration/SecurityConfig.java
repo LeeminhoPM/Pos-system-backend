@@ -33,7 +33,9 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/actuator/**", "/static/**", "/assets/**", "/uploads/**", "/images/**").permitAll()
+                        .requestMatchers("/api/v1/public/**", "/api/public/**").permitAll()
                         .requestMatchers("/api/v1/payments/webhook/**", "/api/payments/webhook/**",
+                                "/api/v1/payments/vietnam/webhook/**", "/api/payments/vietnam/webhook/**",
                                 "/api/v1/payments/config", "/api/payments/config").permitAll()
                         .requestMatchers("/api/super-admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()

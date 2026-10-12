@@ -35,6 +35,12 @@ public class ShiftReportServiceImpl implements ShiftReportService {
     @Override
     @Transactional
     public ShiftReportDTO startShift() {
+        return startShift(0.0);
+    }
+
+    @Override
+    @Transactional
+    public ShiftReportDTO startShift(Double openingCash) {
         User cashier = userService.getCurrentUser();
         LocalDateTime shiftStart = LocalDateTime.now();
 
@@ -49,6 +55,9 @@ public class ShiftReportServiceImpl implements ShiftReportService {
                 .cashier(cashier)
                 .branch(branch)
                 .shiftStart(shiftStart)
+                .openingCash(openingCash != null ? openingCash : 0.0)
+                .actualCashAmount(0.0)
+                .cashDiscrepancy(0.0)
                 .totalSales(0.0)
                 .totalRefunds(0.0)
                 .netSale(0.0)
@@ -60,6 +69,12 @@ public class ShiftReportServiceImpl implements ShiftReportService {
     @Override
     @Transactional
     public ShiftReportDTO endShift(LocalDateTime shiftEnd) {
+        return endShift(shiftEnd, null, null);
+    }
+
+    @Override
+    @Transactional
+    public ShiftReportDTO endShift(LocalDateTime shiftEnd, Double actualCashAmount, String notes) {
         User cashier = userService.getCurrentUser();
         ShiftReport shiftReport = shiftReportRepository.findTopByCashierAndShiftEndIsNullOrderByShiftStartDesc(cashier).orElseThrow(
                 () -> new EntityNotFoundException("Không tìm thấy ca làm việc đang mở để kết thúc")
@@ -73,6 +88,26 @@ public class ShiftReportServiceImpl implements ShiftReportService {
         List<Order> orders = orderRepository.findByCashierIdAndCreatedAtBetween(
                 cashier.getId(), shiftReport.getShiftStart(), actualEnd
         );
+
+        // Tính toán doanh số tiền mặt thực tế trong ca
+        double cashSales = orders.stream()
+                .filter(o -> o.getPaymentType() == PaymentType.CASH)
+                .mapToDouble(o -> o.getTotalAmount() != null ? o.getTotalAmount() : 0.0)
+                .sum();
+        double opening = shiftReport.getOpeningCash() != null ? shiftReport.getOpeningCash() : 0.0;
+        double expectedCash = opening + cashSales;
+
+        if (actualCashAmount != null) {
+            shiftReport.setActualCashAmount(actualCashAmount);
+            shiftReport.setCashDiscrepancy(actualCashAmount - expectedCash);
+        } else {
+            shiftReport.setActualCashAmount(expectedCash);
+            shiftReport.setCashDiscrepancy(0.0);
+        }
+
+        if (notes != null && !notes.isBlank()) {
+            shiftReport.setNotes(notes);
+        }
 
         return getShiftReportDTO(shiftReport, refunds, orders);
     }

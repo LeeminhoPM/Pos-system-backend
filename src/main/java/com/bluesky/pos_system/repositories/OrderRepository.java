@@ -55,4 +55,66 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             @Param("status") OrderStatus status,
             Pageable pageable
     );
+
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0.0) FROM Order o WHERE (:branchId IS NULL OR o.branch.id = :branchId) AND o.status = :status")
+    Double sumTotalRevenueByBranchAndStatus(@Param("branchId") UUID branchId, @Param("status") OrderStatus status);
+
+    @Query("SELECT COUNT(o.id) FROM Order o WHERE (:branchId IS NULL OR o.branch.id = :branchId) AND o.status = :status")
+    Long countOrdersByBranchAndStatus(@Param("branchId") UUID branchId, @Param("status") OrderStatus status);
+
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0.0) FROM Order o WHERE (:branchId IS NULL OR o.branch.id = :branchId) AND o.status = :status AND o.createdAt >= :startDate AND o.createdAt <= :endDate")
+    Double sumRevenueByDateRange(@Param("branchId") UUID branchId, @Param("status") OrderStatus status, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT COUNT(o.id) FROM Order o WHERE (:branchId IS NULL OR o.branch.id = :branchId) AND o.status = :status AND o.createdAt >= :startDate AND o.createdAt <= :endDate")
+    Long countOrdersByDateRange(@Param("branchId") UUID branchId, @Param("status") OrderStatus status, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+    @Query("SELECT CAST(FUNCTION('DATE', o.createdAt) as string) as saleDate, " +
+           "COALESCE(SUM(o.totalAmount), 0.0) as totalRevenue, " +
+           "COUNT(o.id) as orderCount " +
+           "FROM Order o " +
+           "WHERE (:branchId IS NULL OR o.branch.id = :branchId) " +
+           "AND o.status = :status " +
+           "AND o.createdAt >= :startDate AND o.createdAt <= :endDate " +
+           "GROUP BY FUNCTION('DATE', o.createdAt) " +
+           "ORDER BY FUNCTION('DATE', o.createdAt) ASC")
+    List<com.bluesky.pos_system.payload.dto.projection.DailySalesProjection> findDailySalesAggregated(
+            @Param("branchId") UUID branchId,
+            @Param("status") OrderStatus status,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    @Query("SELECT i.product.id as productId, " +
+           "i.product.name as productName, " +
+           "i.product.sku as sku, " +
+           "SUM(i.quantity) as totalQuantitySold, " +
+           "COALESCE(SUM(i.price), 0.0) as totalRevenue " +
+           "FROM OrderItem i JOIN i.order o " +
+           "WHERE (:branchId IS NULL OR o.branch.id = :branchId) " +
+           "AND o.status = :status " +
+           "AND o.createdAt >= :startDate AND o.createdAt <= :endDate " +
+           "GROUP BY i.product.id, i.product.name, i.product.sku " +
+           "ORDER BY SUM(i.quantity) DESC")
+    List<com.bluesky.pos_system.payload.dto.projection.TopProductProjection> findTopProductsAggregated(
+            @Param("branchId") UUID branchId,
+            @Param("status") OrderStatus status,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
+    );
+
+    @Query("SELECT o.paymentType as paymentType, " +
+           "COALESCE(SUM(o.totalAmount), 0.0) as totalRevenue, " +
+           "COUNT(o.id) as orderCount " +
+           "FROM Order o " +
+           "WHERE (:branchId IS NULL OR o.branch.id = :branchId) " +
+           "AND o.status = :status " +
+           "AND o.createdAt >= :startDate AND o.createdAt <= :endDate " +
+           "GROUP BY o.paymentType")
+    List<com.bluesky.pos_system.payload.dto.projection.PaymentTypeRevenueProjection> findPaymentTypeRevenueAggregated(
+            @Param("branchId") UUID branchId,
+            @Param("status") OrderStatus status,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
 }

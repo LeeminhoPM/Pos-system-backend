@@ -13,9 +13,13 @@ public class ShiftReportMapper {
                 .totalRefunds(shiftReport.getTotalRefunds())
                 .totalOrders(shiftReport.getTotalOrders())
                 .netSale(shiftReport.getNetSale())
-                .cashierId(shiftReport.getCashier().getId())
-                .cashier(UserMapper.toDTO(shiftReport.getCashier()))
-                .brandId(shiftReport.getBranch().getId())
+                .openingCash(shiftReport.getOpeningCash())
+                .actualCashAmount(shiftReport.getActualCashAmount())
+                .cashDiscrepancy(shiftReport.getCashDiscrepancy())
+                .notes(shiftReport.getNotes())
+                .cashierId(shiftReport.getCashier() != null ? shiftReport.getCashier().getId() : null)
+                .cashier(shiftReport.getCashier() != null ? UserMapper.toDTO(shiftReport.getCashier()) : null)
+                .brandId(shiftReport.getBranch() != null ? shiftReport.getBranch().getId() : null)
                 .recentOrders(
                         shiftReport.getRecentOrders() != null && !shiftReport.getRecentOrders().isEmpty() ?
                         shiftReport.getRecentOrders().stream().map(OrderMapper::toDTO).toList() : null

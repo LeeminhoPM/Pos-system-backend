@@ -30,6 +30,14 @@ public class ShiftReport {
 
     Double netSale;
 
+    Double openingCash;
+
+    Double actualCashAmount;
+
+    Double cashDiscrepancy;
+
+    String notes;
+
     int totalOrders;
 
     @ManyToOne

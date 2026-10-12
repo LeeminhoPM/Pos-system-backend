@@ -9,7 +9,11 @@ import java.util.UUID;
 public interface ShiftReportService {
     ShiftReportDTO startShift();
 
+    ShiftReportDTO startShift(Double openingCash);
+
     ShiftReportDTO endShift(LocalDateTime shiftEnd);
+
+    ShiftReportDTO endShift(LocalDateTime shiftEnd, Double actualCashAmount, String notes);
 
     ShiftReportDTO getShiftReport(UUID id);
 
